@@ -191,6 +191,7 @@ localStorage.setItem('igomon_user_uuid', userUuid);
 ### 7.3. SGFファイル処理
 
 **使用ライブラリ:** WGo.js
+- https://wgo.waltheri.net/download からダウンロードして使用
 - SGF解析、盤面描画、座標変換を統合サポート
 - Canvas/SVG両対応でレスポンシブ
 - 19路盤のみ対応
@@ -405,6 +406,10 @@ igomon-app/
 │   │   │   └── uuid.ts            // UUID管理
 │   │   └── App.tsx
 ├── public/
+│   ├── wgo/                       // WGo.jsライブラリファイル
+│   │   ├── wgo.min.js            // メインライブラリ
+│   │   ├── wgo.player.min.js     // プレイヤー機能（必要に応じて）
+│   │   └── assets/               // テクスチャ・スタイルファイル
 │   ├── problems/                  // SGFファイル
 │   ├── ogp/                      // 生成OGP画像
 │   └── dist/                     // ビルド済みフロントエンド
@@ -432,7 +437,6 @@ igomon-app/
     "@prisma/client": "^5.0.0",
     "socket.io": "^4.7.0",
     "socket.io-client": "^4.7.0",
-    "wgo": "^2.3.1",
     "canvas": "^2.11.0",
     "uuid": "^9.0.0",
     "react": "^18.0.0",
@@ -755,6 +759,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // 静的ファイル配信
 app.use(express.static(path.join(__dirname, '../public/dist')));
+app.use('/wgo', express.static(path.join(__dirname, '../public/wgo'))); // WGo.js配信
 app.use('/problems', express.static(path.join(__dirname, '../public/problems')));
 app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')));
 
@@ -1152,6 +1157,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // 静的ファイル配信
 app.use(express.static(path.join(__dirname, '../public/dist')));
+app.use('/wgo', express.static(path.join(__dirname, '../public/wgo'))); // WGo.js配信
 app.use('/problems', express.static(path.join(__dirname, '../public/problems')));
 app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')));
 
@@ -1419,3 +1425,479 @@ router.get('/problems', async (req, res) => {
 - Gitでクローンして展開
 - PM2/foreverなどのプロセスマネージャーは使用しない
 - 単純な`node server/index.js`で起動
+
+### 8.15. WGo.jsライブラリの設置
+
+**公式Getting Started に基づく設置方法:**
+
+WGo.jsは囲碁のWebアプリケーションを簡単に作成するためのJavaScriptライブラリです。HTML5 canvasベースで、すべての新しいブラウザ（Android・iPhone含む）で動作します。
+
+**1. ダウンロードと基本設置:**
+
+```bash
+# 公式サイトからダウンロード
+# https://wgo.waltheri.net/download からWGo.jsファイルを取得
+```
+
+公式のBasic HTML構成例:
+```html
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>My page</title>
+    <script type="text/javascript" src="wgo/wgo.min.js"></script>
+  </head>
+  <body>
+    WGo.js application is here.
+  </body>
+</html>
+```
+
+**2. いごもん用ファイル配置:**
+```
+public/wgo/
+├── wgo.min.js                    // メインライブラリ（必須）
+├── wgo.js                        // 開発用非圧縮版（デバッグ時用）
+├── wgo.player.min.js            // プレイヤー機能（SGF表示機能等）
+├── assets/                       // テクスチャファイル
+│   ├── wood1.jpg                // 木目背景（デフォルト）
+│   ├── wood2.jpg                // 木目背景（推奨）
+│   ├── shell.png                // 白石テクスチャ
+│   ├── slate.png                // 黒石テクスチャ
+│   └── shadow.png               // 影テクスチャ
+└── themes/                       // スタイルシート
+    ├── default.css              // デフォルトスタイル
+    └── compact.css              // コンパクトスタイル
+```
+
+**3. HTMLでの読み込み（公式推奨方式）:**
+```html
+<!-- client/public/index.html -->
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>いごもん - 囲碁アンケートサイト</title>
+    <!-- WGo.js公式推奨の読み込み方法 -->
+    <script type="text/javascript" src="/wgo/wgo.min.js"></script>
+    <!-- オプション: プレイヤー機能が必要な場合 -->
+    <script type="text/javascript" src="/wgo/wgo.player.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- React appがここにマウントされる -->
+  </body>
+</html>
+```
+
+**4. WGo.js主要コンポーネント説明:**
+
+公式ドキュメントに基づく主要コンポーネント:
+
+- **WGo.Board** - HTML5 canvasベースの碁盤描画
+  - 碁石の配置・削除
+  - カスタムマーカーの表示
+  - マウスイベントハンドリング
+  - 座標システム（相対座標・絶対座標）
+
+- **WGo.Game** - ゲームロジック
+  - 手順の管理
+  - 着手判定（コウ・自殺手等）
+  - 取った石の計算
+
+- **WGo.Position** - 盤面状態の保存・復元
+
+**5. 基本的なBoard初期化（公式チュートリアル準拠）:**
+```javascript
+// 公式チュートリアルの基本例
+var board = new WGo.Board(document.getElementById("board"), {
+    width: 600,
+});
+
+// セクション表示（盤面の一部のみ表示）
+var board = new WGo.Board(document.getElementById("board"), {
+    width: 600,
+    section: {
+        top: 12,
+        left: 6, 
+        right: 0,
+        bottom: 0
+    }
+});
+
+// マウスイベント処理
+board.addEventListener("click", function(x, y) {
+    // 黒石を配置
+    board.addObject({
+        x: x,
+        y: y,
+        c: WGo.B
+    });
+});
+```
+
+**6. いごもん用GoBoard.tsxの実装例（公式API準拠）:**
+
+```typescript
+// client/src/components/GoBoard.tsx
+'use client';
+import { useEffect, useRef, useState } from 'react';
+
+interface GoBoardProps {
+  sgfContent: string;
+  onCoordinateSelect?: (coordinate: string) => void;
+  showClickable?: boolean;
+  resultsData?: Record<string, { votes: number; answers: any[] }>;
+  maxMoves?: number; // movesパラメータ対応
+}
+
+declare global {
+  interface Window {
+    WGo: any;
+  }
+}
+
+export default function GoBoard({ 
+  sgfContent, 
+  onCoordinateSelect, 
+  showClickable = false,
+  resultsData,
+  maxMoves 
+}: GoBoardProps) {
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [board, setBoard] = useState<any>(null);
+  const [isWgoLoaded, setIsWgoLoaded] = useState(false);
+
+  // WGo.jsの読み込み確認（公式推奨方式）
+  useEffect(() => {
+    const checkWgoLoaded = () => {
+      if (typeof window !== 'undefined' && window.WGo) {
+        console.log('WGo.js loaded:', window.WGo.version); // 公式のversion確認
+        setIsWgoLoaded(true);
+      } else {
+        // WGo.jsが読み込まれるまで待機
+        setTimeout(checkWgoLoaded, 100);
+      }
+    };
+    checkWgoLoaded();
+  }, []);
+
+  useEffect(() => {
+    if (!isWgoLoaded || !boardRef.current) return;
+
+    const initializeBoard = () => {
+      try {
+        // 公式コンストラクタパラメータに準拠
+        const newBoard = new window.WGo.Board(boardRef.current, {
+          size: 19,                    // 19路盤
+          width: 500,                  // 幅（px）
+          height: 500,                 // 高さ（px）
+          font: "Calibri",            // 公式デフォルトフォント
+          lineWidth: 1,               // 線の太さ
+          stoneSize: 1,               // 石のサイズ係数
+          shadowSize: 1,              // 影のサイズ係数
+          background: window.WGo.DIR + "wood1.jpg", // 公式デフォルト背景
+          section: {                  // セクション表示（公式仕様）
+            top: 0,
+            left: 0, 
+            right: 0,
+            bottom: 0
+          }
+        });
+
+        setBoard(newBoard);
+
+        if (sgfContent) {
+          // SGF処理（WGo.Gameクラス使用）
+          const game = new window.WGo.Game();
+          loadSgfToGame(game, sgfContent, maxMoves);
+          
+          // 現在のポジションを盤面に反映
+          const position = game.getPosition();
+          updateBoardPosition(newBoard, position);
+
+          // アンケート回答ページでのクリック処理（公式addEventListener）
+          if (showClickable && onCoordinateSelect) {
+            newBoard.addEventListener("click", (x: number, y: number) => {
+              // 公式座標システム（相対座標）
+              const coordinate = wgoToSgfCoords(x, y);
+              onCoordinateSelect(coordinate);
+              
+              // 視覚的フィードバック（公式addObject）
+              newBoard.removeObjectsAt(x, y); // 既存マーカー削除
+              newBoard.addObject({
+                x: x,
+                y: y,
+                type: "CR",  // 公式定義済みマーカー（円）
+                c: "#ff0000" // 赤色
+              });
+            });
+          }
+
+          // 結果表示ページでの得票数表示
+          if (resultsData) {
+            displayResults(newBoard, resultsData);
+          }
+        }
+
+      } catch (error) {
+        console.error('Failed to initialize WGo.Board:', error);
+      }
+    };
+
+    initializeBoard();
+
+    // クリーンアップ
+    return () => {
+      if (board) {
+        board.removeAllObjects?.();
+      }
+    };
+  }, [isWgoLoaded, sgfContent, showClickable, resultsData, maxMoves]);
+
+  // SGFをWGo.Gameに読み込み（公式Game API使用）
+  const loadSgfToGame = (game: any, sgfContent: string, maxMoves?: number) => {
+    try {
+      // 簡易SGFパーサー（公式の詳細パーサーがあれば使用推奨）
+      const moves = parseSgfMoves(sgfContent);
+      
+      moves.forEach((move, index) => {
+        if (maxMoves !== undefined && index >= maxMoves) return;
+        
+        if (move.color && move.x !== undefined && move.y !== undefined) {
+          // 公式play()メソッド使用
+          const result = game.play(move.x, move.y, move.color);
+          if (Array.isArray(result)) {
+            console.log(`Move ${index + 1}: captured ${result.length} stones`);
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to load SGF:', error);
+    }
+  };
+
+  // ポジションを盤面に反映（公式Position API使用）
+  const updateBoardPosition = (boardInstance: any, position: any) => {
+    boardInstance.removeAllObjects(); // 既存オブジェクト削除
+    
+    for (let x = 0; x < position.size; x++) {
+      for (let y = 0; y < position.size; y++) {
+        const stone = position.get(x, y);
+        if (stone !== 0) {
+          // 公式addObject（石の配置）
+          boardInstance.addObject({
+            x: x,
+            y: y,
+            c: stone // WGo.B または WGo.W
+          });
+        }
+      }
+    }
+  };
+
+  // 結果表示機能（公式DrawHandler使用）
+  const displayResults = (boardInstance: any, results: Record<string, { votes: number; answers: any[] }>) => {
+    Object.entries(results).forEach(([coordinate, data]) => {
+      const coords = sgfToWgoCoords(coordinate);
+      
+      if (coords.x >= 0 && coords.x < 19 && coords.y >= 0 && coords.y < 19) {
+        // 得票数に応じた色分け
+        const color = getColorByVotes(data.votes);
+        
+        // 公式LBマーカー（ラベル）使用
+        boardInstance.addObject({
+          x: coords.x,
+          y: coords.y,
+          type: "LB",  // 公式定義済みラベルマーカー
+          text: data.votes.toString(),
+          color: color
+        });
+      }
+    });
+
+    // クリック時の詳細表示
+    boardInstance.addEventListener("click", (x: number, y: number) => {
+      const coordinate = wgoToSgfCoords(x, y);
+      if (results[coordinate]) {
+        showAnswerDetails(coordinate, results[coordinate]);
+      }
+    });
+  };
+
+  // 簡易SGFパーサー
+  const parseSgfMoves = (sgfContent: string) => {
+    const moves: Array<{color: number, x: number, y: number}> = [];
+    const blackMoves = sgfContent.match(/;B\[([a-s][a-s])\]/g) || [];
+    const whiteMoves = sgfContent.match(/;W\[([a-s][a-s])\]/g) || [];
+    
+    // 手順順に並び替え（簡易版）
+    const allMoves = [
+      ...blackMoves.map(m => ({ move: m, color: window.WGo.B })),
+      ...whiteMoves.map(m => ({ move: m, color: window.WGo.W }))
+    ];
+    
+    allMoves.forEach(({move, color}) => {
+      const coords = move.match(/\[([a-s])([a-s])\]/);
+      if (coords) {
+        const x = coords[1].charCodeAt(0) - 'a'.charCodeAt(0);
+        const y = coords[2].charCodeAt(0) - 'a'.charCodeAt(0);
+        moves.push({ color, x, y });
+      }
+    });
+    
+    return moves;
+  };
+
+  // 座標変換（公式座標システム準拠）
+  const sgfToWgoCoords = (sgfCoord: string): { x: number; y: number } => {
+    if (!sgfCoord || sgfCoord.length !== 2) return { x: -1, y: -1 };
+    
+    const x = sgfCoord.charCodeAt(0) - 'a'.charCodeAt(0); // a=0, b=1, ...
+    const y = sgfCoord.charCodeAt(1) - 'a'.charCodeAt(0);
+    
+    return { x, y };
+  };
+
+  const wgoToSgfCoords = (x: number, y: number): string => {
+    return String.fromCharCode('a'.charCodeAt(0) + x) + 
+           String.fromCharCode('a'.charCodeAt(0) + y);
+  };
+
+  // 得票数による色分け
+  const getColorByVotes = (votes: number): string => {
+    if (votes >= 10) return "#ff4757"; // 赤色（10票以上）
+    if (votes >= 5) return "#ffa502";  // 橙色（5-9票）
+    return "#57a4ff";                  // 青色（1-4票）
+  };
+
+  // 回答詳細表示
+  const showAnswerDetails = (coordinate: string, data: { votes: number; answers: any[] }) => {
+    const displayCoord = sgfToDisplayCoordinate(coordinate);
+    const event = new CustomEvent('showAnswerDetails', {
+      detail: { coordinate: displayCoord, data }
+    });
+    window.dispatchEvent(event);
+  };
+
+  // SGF座標を標準囲碁記法（A1〜T19）に変換
+  const sgfToDisplayCoordinate = (sgfCoord: string): string => {
+    if (!sgfCoord || sgfCoord.length !== 2) return '';
+    
+    const x = sgfCoord.charCodeAt(0) - 'a'.charCodeAt(0);
+    const y = sgfCoord.charCodeAt(1) - 'a'.charCodeAt(0);
+    
+    const letters = 'ABCDEFGHJKLMNOPQRST'; // I除く
+    const letter = letters[x];
+    const number = 19 - y; // SGFは上から下、表示は下から上
+    
+    return `${letter}${number}`;
+  };
+
+  if (!isWgoLoaded) {
+    return (
+      <div className="go-board-loading">
+        <p>WGo.jsを読み込み中...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="go-board-container">
+      <div 
+        ref={boardRef} 
+        className="go-board"
+        style={{ 
+          width: '500px', 
+          height: '500px',
+          border: '2px solid #8B4513',
+          borderRadius: '8px'
+        }}
+      />
+      {showClickable && (
+        <p className="board-instruction">
+          盤面をクリックして着手点を選択してください
+        </p>
+      )}
+      {isWgoLoaded && (
+        <p className="wgo-version">
+          WGo.js {window.WGo?.version || 'unknown'} loaded
+        </p>
+      )}
+    </div>
+  );
+}
+```
+
+**7. 使用例:**
+
+```typescript
+// アンケート回答ページ
+<GoBoard 
+  sgfContent={problemData.sgfContent}
+  maxMoves={problemData.moves} // movesパラメータ対応
+  onCoordinateSelect={(coordinate) => {
+    setSelectedCoordinate(coordinate);
+  }}
+  showClickable={true}
+/>
+
+// 結果表示ページ
+<GoBoard 
+  sgfContent={problemData.sgfContent}
+  maxMoves={problemData.moves}
+  resultsData={resultsData}
+  showClickable={false}
+/>
+```
+
+**8. Expressサーバーでの静的ファイル配信:**
+
+```typescript
+// server/index.ts
+import express from 'express';
+import path from 'path';
+
+const app = express();
+
+// WGo.js静的ファイル配信（公式推奨）
+app.use('/wgo', express.static(path.join(__dirname, '../public/wgo')));
+app.use(express.static(path.join(__dirname, '../public/dist')));
+app.use('/problems', express.static(path.join(__dirname, '../public/problems')));
+app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')));
+
+// WGo.DIRが正しく設定されるように
+app.get('/wgo/wgo.min.js', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/wgo/wgo.min.js'));
+});
+```
+
+**9. 公式API要点まとめ:**
+
+- **グローバル定数**: `WGo.B`（黒石）、`WGo.W`（白石）、`WGo.version`
+- **Board クラス**: 19路盤描画、マウスイベント、オブジェクト管理
+- **Game クラス**: 着手処理、ルール判定、ポジション管理
+- **DrawHandlers**: `CR`（円）、`LB`（ラベル）、`SQ`（四角）、`TR`（三角）等
+- **座標システム**: 相対座標（0-18）と絶対座標（ピクセル）の2種類
+- **Event処理**: `addEventListener("click", callback)`での盤面クリック検出
+
+## 9. 今後の課題と改善点
+
+- [ ] ユーザーからのフィードバックを基にしたUI/UXの改善
+- [ ] アクセシビリティ対応（色覚バリアフリー、キーボード操作対応など）
+- [ ] モバイルデバイス向けの最適化
+- [ ] 回答削除後の即時反映機能の実装
+- [ ] OGP画像のカスタマイズ機能（ユーザーが任意の画像を設定可能に）
+- [ ] 問題作成時のガイドラインやテンプレートの提供
+- [ ] サイトの多言語対応（英語、中国語など）
+- [ ] ユーザーランク制度の導入と報酬システム
+- [ ] 定期的なイベントやキャンペーンの実施
+- [ ] AIを活用した問題生成やヒント機能の検討
+
+## 10. 参考文献・リンク
+
+- [Prisma Documentation](https://www.prisma.io/docs/)
+- [Express.js Guide](https://expressjs.com/en/guide/routing.html)
+- [React Documentation](https://reactjs.org/docs/getting-started.html)
+- [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
+- [Socket.IO Documentation](https://socket.io/docs/v4/)
+- [WGo.js Documentation](https://wgo.waltheri.net/)
