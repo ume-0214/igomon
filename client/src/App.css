@@ -758,3 +758,32 @@ body {
   background-size: 20px;
   padding-right: 40px;
 }
+
+/* トップへ戻るリンク */
+.back-to-top {
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.back-to-top a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #666;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.back-to-top a:hover {
+  color: #1976d2;
+}
+
+.back-to-top svg {
+  transition: transform 0.2s;
+}
+
+.back-to-top a:hover svg {
+  transform: translateX(-2px);
+}

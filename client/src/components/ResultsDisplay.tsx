@@ -75,8 +75,6 @@ export function ResultsDisplay({ results, onDelete }: ResultsDisplayProps) {
                     <span className="player-rank">段位：{answer.playerRank}</span>
                   </div>
                   <div className="answer-actions">
-                    <span className="vote-count">👍 0</span>
-                    <span className="vote-count">👎 0</span>
                     {answer.userUuid === userUuid && (
                       <button 
                         className="delete-button"

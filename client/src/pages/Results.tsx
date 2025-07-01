@@ -59,22 +59,19 @@ export function Results() {
   }
 
   return (
-    <div className="results-page">
-      <header className="results-header">
-        <h1>問題 {problem.id} - 結果</h1>
-        <div className="header-info">
-          <span className="turn-info">手番: {problem.turn === 'black' ? '黒番' : '白番'}</span>
-          <Link to="/" className="back-link">トップへ戻る</Link>
+    <div className="questionnaire-page">
+      <div className="questionnaire-container">
+        <div className="problem-header">
+          <div className="problem-info-left">
+            <span className="problem-number">No.{problem.id} - 結果</span>
+            <span className="turn-info">{problem.turn === 'black' ? '黒番' : '白番'}</span>
+          </div>
         </div>
-      </header>
-      
-      <main className="results-main">
-        <div className="results-container">
-          <div className="board-section">
-            <div className="problem-info">
-              <h3>No.{problem.id} {problem.turn === 'black' ? '黒番' : '白番'}</h3>
-              <p className="description">{problem.description}</p>
-            </div>
+        
+        <p className="problem-description">{problem.description}</p>
+        
+        <div className="questionnaire-content">
+          <div className="board-wrapper">
             <GoBoard
               sgfContent={problem.sgfContent}
               maxMoves={problem.moves}
@@ -83,14 +80,22 @@ export function Results() {
             />
           </div>
           
-          <div className="results-section">
+          <div className="form-wrapper">
             <ResultsDisplay 
               results={results} 
               onDelete={loadData}
             />
+            <div className="back-to-top">
+              <Link to="/">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11 12L7 8L11 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>トップへ戻る</span>
+              </Link>
+            </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
