@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./igomon.db"
+}
+
+model Problem {
+  id          Int      @id
+  sgfFilePath String   @map("sgf_file_path")
+  description String
+  turn        String   // "black" or "white"
+  createdDate String   @map("created_date")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  answers     Answer[]
+
+  @@map("problems")
+}
+
+model Answer {
+  id          Int      @id @default(autoincrement())
+  problemId   Int      @map("problem_id")
+  userUuid    String   @map("user_uuid")
+  coordinate  String   // SGF座標 (aa, ab, etc.)
+  reason      String
+  playerName  String   @map("player_name")
+  playerRank  String   @map("player_rank")
+  isDeleted   Boolean  @default(false) @map("is_deleted")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  problem     Problem  @relation(fields: [problemId], references: [id])
+
+  @@index([problemId])
+  @@index([userUuid])
+  @@index([coordinate])
+  @@index([isDeleted])
+  @@map("answers")
+}

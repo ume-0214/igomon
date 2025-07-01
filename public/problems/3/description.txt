@@ -1,0 +1,5 @@
+id: 3
+turn: black
+created: 2025-06-27
+moves: 80
+description: 黒番です。形勢を逆転する一手を探してください。

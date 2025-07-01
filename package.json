@@ -1,0 +1,53 @@
+{
+  "name": "igomon-app",
+  "version": "1.0.0",
+  "description": "囲碁アンケートサイト『いごもん』",
+  "engines": {
+    "node": "18.x"
+  },
+  "scripts": {
+    "dev:client": "vite",
+    "dev:server": "nodemon --exec ts-node server/index.ts",
+    "build:client": "cd client && vite build",
+    "build:server": "tsc",
+    "start": "node dist/server/index.js",
+    "db:migrate": "prisma migrate dev",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio"
+  },
+  "keywords": [
+    "go",
+    "igo",
+    "questionnaire",
+    "survey"
+  ],
+  "author": "igomon team",
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.10.1",
+    "canvas": "^3.1.2",
+    "chokidar": "^4.0.3",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "prisma": "^6.10.1",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.0.7",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@types/uuid": "^10.0.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "nodemon": "^3.1.10",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^7.6.3",
+    "socket.io-client": "^4.8.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.0"
+  }
+}

@@ -1,0 +1,49 @@
+/* GoBoard専用スタイル */
+.igomon-board-container {
+  position: relative;
+  display: inline-block;
+}
+
+.igomon-board {
+  position: relative;
+}
+
+/* 得票数表示用のオーバーレイスタイル */
+.vote-overlay {
+  position: absolute;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  pointer-events: auto;
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.1s ease;
+}
+
+.vote-overlay:hover {
+  transform: scale(1.1);
+}
+
+/* 得票数による色分け */
+.vote-high {
+  background-color: #ff4757; /* 赤色（10票以上） */
+}
+
+.vote-medium {
+  background-color: #ffa502; /* 橙色（5-9票） */
+}
+
+.vote-low {
+  background-color: #57a4ff; /* 青色（1-4票） */
+}
+
+/* 盤面指示文 */
+.board-instruction {
+  margin-top: 10px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}

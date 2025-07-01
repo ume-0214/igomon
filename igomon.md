@@ -215,6 +215,31 @@ localStorage.setItem('igomon_user_uuid', userUuid);
 - A1 = WGo.js (0, 18) = SGF "as"
 - T1 = WGo.js (18, 18) = SGF "ss"
 
+#### WGo.jsによる投票数表示機能
+
+**WGo.Board APIを使用した盤面上の投票数表示:**
+
+WGo.jsの`addObject()`メソッドを使用して、碁盤上の各交点に投票数を表示する。実装方法は以下の通り：
+
+1. **ラベルマーカー（"LB"）の使用**
+   - WGo.jsの組み込みマーカー"LB"（Label）を使用
+   - 石の上に投票数の数字を重ねて表示
+   - `board.addObject({x, y, type: "LB", text: "票数"})`
+
+2. **実装例**
+```javascript
+// 各投票データに対して石とラベルを配置
+votes.forEach(v => {
+    board.addObject({ x: v.x, y: v.y, c: WGo.B });  // 石を配置
+    board.addObject({ x: v.x, y: v.y, type: "LB", text: String(v.votes) });  // 票数ラベル
+});
+```
+
+3. **投票数による色分け表示**
+   - カスタム描画ハンドラを作成して背景色を制御
+   - 得票数に応じた色分け（例：10票以上は赤、5-9票は橙、1-4票は青）
+   - `WGo.Board.DrawHandler`インターフェースを実装
+
 ### 7.4. データベース設計（Prisma + SQLite）
 
 **Prismaスキーマ:**
@@ -1452,6 +1477,42 @@ WGo.jsは囲碁のWebアプリケーションを簡単に作成するためのJa
   </body>
 </html>
 ```
+
+#### WGo.jsの高度な実装技術
+
+**SGF読み込みとプレイヤー機能:**
+
+WGo.BasicPlayerを使用したSGFファイルの表示：
+
+```javascript
+var player = new WGo.BasicPlayer(element, {
+    sgfFile: "game.sgf"
+});
+```
+
+**標準マーカーの種類と使用方法:**
+- **"LB"**: ラベル（任意の文字列を表示）
+- **"TR"**: 三角形マーカー
+- **"SQ"**: 四角形マーカー
+- **"CR"**: 丸印マーカー
+
+これらは`WGo.Board.drawHandlers`として定義されており、`board.addObject()`で使用可能。
+
+**カスタム描画ハンドラによる投票数表示:**
+
+投票数に応じた色付き番号マーカーの実装手順：
+
+1. **色決定関数の作成**
+   - 投票数から背景色を決定（少なければ緑系、多ければ赤系）
+
+2. **カスタムDrawHandlerの実装**
+   - `board.getX(x)`, `board.getY(y)`で交点のキャンバス座標を取得
+   - CanvasRenderingContext2DのAPIで円や四角を描画
+   - 中央にテキストを配置（`textAlign="center"`, `textBaseline="middle"`）
+
+3. **マーカー配置**
+   - カスタムハンドラを使用して`board.addObject`で配置
+   - 例：`{x:3, y:3, type: voteMarker, text: "12"}`
 
 **2. いごもん用ファイル配置:**
 ```

@@ -1,0 +1,107 @@
+// server/index.ts
+import express, { Request, Response } from 'express';
+import { createServer } from 'http';
+import { Server as SocketIOServer } from 'socket.io';
+import cors from 'cors';
+import path from 'path';
+import apiRoutes from './routes/api';
+import { ProblemWatcher } from './utils/file-watcher';
+import { getAllProblems, loadProblemFromDirectory } from './utils/problem-loader';
+import { generateProblemHTML } from './utils/html-generator';
+
+const app = express();
+const server = createServer(app);
+const io = new SocketIOServer(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+const port = process.env.PORT || 3000;
+
+// ミドルウェア
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 静的ファイル配信
+app.use(express.static(path.join(__dirname, '../public/dist')));
+app.use('/wgo', express.static(path.join(__dirname, '../public/wgo'))); // WGo.js配信
+app.use('/problems', express.static(path.join(__dirname, '../public/problems')));
+app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')));
+
+// API ルート
+app.use('/api', apiRoutes);
+
+// WebSocket接続処理
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+  
+  // 接続時に現在の問題一覧を送信
+  socket.emit('initialProblems', getAllProblems());
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// ファイル監視を開始
+const problemWatcher = new ProblemWatcher(io);
+
+// 問題ページへの直接アクセス時のOGP対応
+app.get('/questionnaire/:problemId', (req: Request, res: Response) => {
+  const problemId = req.params.problemId;
+  const problem = loadProblemFromDirectory(problemId);
+  
+  if (problem) {
+    const ogpData = {
+      title: `問題 ${problem.id} - いごもん`,
+      description: problem.description,
+      imageUrl: `https://igomon.net/ogp/problem_${problem.id}.png`,
+      url: `https://igomon.net/questionnaire/${problem.id}`
+    };
+    
+    // OGPタグを含むHTMLを生成
+    const html = generateProblemHTML(problem.id, ogpData);
+    res.send(html);
+  } else {
+    // 問題が見つからない場合は通常のSPAとして処理
+    res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+  }
+});
+
+// 結果ページへの直接アクセス時のOGP対応
+app.get('/results/:problemId', (req: Request, res: Response) => {
+  const problemId = req.params.problemId;
+  const problem = loadProblemFromDirectory(problemId);
+  
+  if (problem) {
+    const ogpData = {
+      title: `問題 ${problem.id} 結果 - いごもん`,
+      description: problem.description,
+      imageUrl: `https://igomon.net/ogp/problem_${problem.id}.png`,
+      url: `https://igomon.net/results/${problem.id}`
+    };
+    
+    const html = generateProblemHTML(problem.id, ogpData);
+    res.send(html);
+  } else {
+    res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+  }
+});
+
+// SPA用のフォールバック
+app.get('/*path', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+});
+
+// サーバー終了時のクリーンアップ
+process.on('SIGTERM', () => {
+  problemWatcher.destroy();
+  server.close();
+});
+
+server.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
