@@ -21,7 +21,7 @@ export function Home() {
   return (
     <div className="home-page">
       <header>
-        <h1>いごもん - 囲碁アンケートサイト</h1>
+        <h1>いごもん</h1>
         <div className="connection-status">
           {isConnected ? (
             <span className="connected">● リアルタイム更新中</span>

@@ -658,12 +658,39 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.5rem;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  background-color: #fafafa;
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f0f0f0;
+}
+
+.answers-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.answers-list::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+
+.answers-list::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 4px;
+}
+
+.answers-list::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
 }
 
 .answer-item {
   border: 1px solid #ddd;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
+  background-color: #fff;
 }
 
 .answer-meta {
@@ -723,6 +750,7 @@ body {
   white-space: pre-wrap;
   font-size: 14px;
   color: #333;
+  margin: 0;
 }
 
 .help-text {

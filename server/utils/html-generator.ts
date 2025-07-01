@@ -37,7 +37,7 @@ export function generateProblemHTML(problemId: number, ogpData: OGPData): string
   
   // タイトルも更新
   template = template.replace(
-    '<title>いごもん - 囲碁アンケートサイト</title>',
+    '<title>いごもん</title>',
     `<title>${ogpData.title}</title>`
   );
 
