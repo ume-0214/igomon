@@ -46,20 +46,20 @@ export function Home() {
                   <div className="problem-thumbnail">
                     <img 
                       src={`/ogp/problem_${problem.id}.png`} 
-                      alt={`死活問題${String(problem.id).padStart(3, '0')}`}
+                      alt={`No.${String(problem.id)}`}
                       onError={(e) => {
                         // 画像が存在しない場合はプレースホルダーを表示
                         e.currentTarget.src = '/placeholder-board.png';
                       }}
                     />
                     <div className="problem-id-overlay">
-                      死活問題{String(problem.id).padStart(3, '0')}
+                      No.{String(problem.id)}
                     </div>
                   </div>
                   <div className="problem-info">
                     <div className="problem-details">
                       <span className="problem-turn">
-                        {problem.turn === 'black' ? '黒番' : '白番'}で手　解答
+                        {problem.turn === 'black' ? '黒番' : '白番'}　解答
                       </span>
                       <span className="problem-date">
                         ◎ {formatDate(problem.createdDate)}
