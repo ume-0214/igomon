@@ -78,7 +78,6 @@ export function AnswerForm({ selectedCoordinate, onSubmit }: AnswerFormProps) {
 
   return (
     <div>
-      <h3 style={{ fontSize: '16px', fontWeight: '600', textAlign: 'center', marginBottom: '12px', marginTop: '0' }}>回答フォーム</h3>
       <form className="answer-form" onSubmit={handleSubmit}>
         <div className="name-rank-row">
           <div className="form-group-inline">
@@ -88,7 +87,6 @@ export function AnswerForm({ selectedCoordinate, onSubmit }: AnswerFormProps) {
               id="playerName"
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="田中太郎"
               className={errors.playerName ? 'error' : ''}
             />
             {errors.playerName && <span className="error-message">{errors.playerName}</span>}
@@ -103,26 +101,26 @@ export function AnswerForm({ selectedCoordinate, onSubmit }: AnswerFormProps) {
             className={errors.playerRank ? 'error' : ''}
         >
           <option value="">段位を選択</option>
-          <option value="1級">1級</option>
-          <option value="2級">2級</option>
-          <option value="3級">3級</option>
-          <option value="4級">4級</option>
-          <option value="5級">5級</option>
-          <option value="6級">6級</option>
-          <option value="7級">7級</option>
-          <option value="8級">8級</option>
-          <option value="9級">9級</option>
-          <option value="10級">10級</option>
-          <option value="11級">11級</option>
-          <option value="12級">12級</option>
-          <option value="13級">13級</option>
-          <option value="14級">14級</option>
-          <option value="15級">15級</option>
-          <option value="16級">16級</option>
-          <option value="17級">17級</option>
-          <option value="18級">18級</option>
-          <option value="19級">19級</option>
           <option value="20級">20級</option>
+          <option value="19級">19級</option>
+          <option value="18級">18級</option>
+          <option value="17級">17級</option>
+          <option value="16級">16級</option>
+          <option value="15級">15級</option>
+          <option value="14級">14級</option>
+          <option value="13級">13級</option>
+          <option value="12級">12級</option>
+          <option value="11級">11級</option>
+          <option value="10級">10級</option>
+          <option value="9級">9級</option>
+          <option value="8級">8級</option>
+          <option value="7級">7級</option>
+          <option value="6級">6級</option>
+          <option value="5級">5級</option>
+          <option value="4級">4級</option>
+          <option value="3級">3級</option>
+          <option value="2級">2級</option>
+          <option value="1級">1級</option>
           <option value="初段">初段</option>
           <option value="二段">二段</option>
           <option value="三段">三段</option>
