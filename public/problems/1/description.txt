@@ -1,5 +1,0 @@
-id: 1
-turn: black
-created: 2025-06-29
-moves: 30
-description: 次の一手を考えてください。着手とその理由を回答してください。

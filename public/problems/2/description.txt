@@ -1,5 +1,0 @@
-id: 2
-turn: white
-created: 2025-06-28
-moves: 50
-description: 白番です。黒の大石を攻めてください。
