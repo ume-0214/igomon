@@ -82,10 +82,53 @@ export default function GoBoard({
           height: containerWidth,
           font: "Calibri",
           lineWidth: 1,
-          background: "/wgo/wood1.jpg"
+          background: "/wgo/wood1.jpg",
+          section: { top: -0.5, bottom: -0.5, left: -0.5, right: -0.5 }  // 座標表示のため余白拡大
         });
         
         console.log('Board created:', newBoard);
+
+        // 座標表示用のカスタム描画ハンドラーを定義
+        const coordinates = {
+          grid: {
+            draw: function(args: any, board: any) {
+              const ctx = this;
+              // テキスト描画のスタイル設定
+              ctx.fillStyle = "rgba(0,0,0,0.7)";
+              ctx.textBaseline = "middle";
+              ctx.textAlign = "center";
+              ctx.font = board.stoneRadius + "px " + (board.font || "");
+              
+              // 盤外に文字を配置するための座標計算
+              const xLeft   = board.getX(board.size - 0.25);  // 右端より少し右のX座標
+              const xRight  = board.getX(-0.75);             // 左端より少し左のX座標
+              const yTop    = board.getY(-0.75);             // 上端より少し上のY座標
+              const yBottom = board.getY(board.size - 0.25); // 下端より少し下のY座標
+              
+              // 全ての交点に対応する座標ラベルを描画
+              for (let i = 0; i < board.size; i++) {
+                // 横方向の文字(A～T)を決定（'I'を飛ばす）
+                let charCode = "A".charCodeAt(0) + i;
+                if (charCode >= "I".charCodeAt(0)) charCode++;  // 'I'の文字コードをスキップ
+                const letter = String.fromCharCode(charCode);
+                
+                // 縦座標（数字）ラベルを左端と右端に描画
+                const y = board.getY(i);
+                ctx.fillText(board.size - i, xLeft,  y);  // 左側：19,18,...1
+                ctx.fillText(board.size - i, xRight, y);  // 右側：19,18,...1
+                
+                // 横座標（英字）ラベルを上端と下端に描画
+                const x = board.getX(i);
+                ctx.fillText(letter, x, yTop);     // 上側：A,...T（I抜き）
+                ctx.fillText(letter, x, yBottom);  // 下側：A,...T（I抜き）
+              }
+            }
+          }
+        };
+
+        // 座標表示ハンドラーを追加
+        newBoard.addCustomObject(coordinates);
+        console.log('座標表示ハンドラーを追加しました');
 
         setBoard(newBoard);
 
