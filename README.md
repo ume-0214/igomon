@@ -91,15 +91,3 @@ npm run build:client
 # サーバーのビルド
 npm run build:server
 ```
-
-## デプロイ
-
-詳細なデプロイ手順は [DEPLOY.md](./DEPLOY.md) を参照してください。
-
-## ライセンス
-
-MIT License
-
-## 貢献
-
-バグ報告や機能提案は [Issues](https://github.com/yourusername/igomon/issues) からお願いします。

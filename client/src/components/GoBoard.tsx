@@ -146,22 +146,66 @@ export default function GoBoard({
             // クリックマーカー保存用変数
             let lastClickMarker: any = null;
             
+            // カスタム着手点マーカーハンドラーを定義
+            const clickMarkerHandler = {
+              stone: {
+                draw: function(args: any, board: any) {
+                  const ctx = board.stone.getContext(args.x, args.y);
+                  const xr = board.getX(args.x);
+                  const yr = board.getY(args.y);
+                  const sr = board.stoneRadius;
+                  
+                  // 外側の円（赤色）を描画
+                  ctx.beginPath();
+                  ctx.arc(xr, yr, sr * 0.9, 0, 2 * Math.PI, true);
+                  ctx.lineWidth = 3;
+                  ctx.strokeStyle = '#ff0000';
+                  ctx.stroke();
+                  
+                  // 内側の塗りつぶし円（半透明の赤）
+                  ctx.beginPath();
+                  ctx.arc(xr, yr, sr * 0.8, 0, 2 * Math.PI, true);
+                  ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                  ctx.fill();
+                  
+                  // 中心の点（濃い赤）
+                  ctx.beginPath();
+                  ctx.arc(xr, yr, sr * 0.2, 0, 2 * Math.PI, true);
+                  ctx.fillStyle = '#ff0000';
+                  ctx.fill();
+                }
+              }
+            };
+            
             newBoard.addEventListener("click", (x: number, y: number) => {
               // 公式座標システム（相対座標）
               const coordinate = wgoToSgfCoords(x, y);
               onCoordinateSelect(coordinate);
               
-              // 視覚的フィードバック（公式addObject）
-              // 前回のマーカーを削除
-              if (lastClickMarker) {
-                newBoard.removeObject(lastClickMarker);
+              // 視覚的フィードバック
+              // すべてのオブジェクトを削除してから石を再配置
+              newBoard.removeAllObjects();
+              
+              // 既存の石を再配置
+              const position = game.getPosition();
+              for (let px = 0; px < position.size; px++) {
+                for (let py = 0; py < position.size; py++) {
+                  const stone = position.get(px, py);
+                  if (stone !== 0) {
+                    newBoard.addObject({
+                      x: px,
+                      y: py,
+                      c: stone
+                    });
+                  }
+                }
               }
               
-              // 新しいマーカーを追加
+              // 新しいマーカーを追加（カスタムハンドラー使用）
               lastClickMarker = {
                 x: x,
                 y: y,
-                type: "CR"  // 公式定義済みマーカー（円）
+                type: clickMarkerHandler
               };
               newBoard.addObject(lastClickMarker);
             });
