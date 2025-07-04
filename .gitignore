@@ -48,4 +48,6 @@ test-local.sh
 # Sandbox
 sandbox/
 
-public/problems
+# Problems directory - keep the directory but ignore its contents
+public/problems/*
+!public/problems/.gitkeep
