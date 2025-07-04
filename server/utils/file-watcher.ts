@@ -12,7 +12,10 @@ export class ProblemWatcher {
 
   constructor(io: SocketIOServer) {
     this.io = io;
-    this.problemsDir = path.join(__dirname, '../../public/problems');
+    const rootDir = process.env.NODE_ENV === 'production' 
+      ? path.join(__dirname, '../../..') // dist/server/utils から ルートへ
+      : path.join(__dirname, '../..');   // server/utils から ルートへ
+    this.problemsDir = path.join(rootDir, 'public/problems');
     this.initializeWatcher();
   }
 

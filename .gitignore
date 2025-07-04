@@ -47,3 +47,5 @@ test-local.sh
 
 # Sandbox
 sandbox/
+
+public/problems

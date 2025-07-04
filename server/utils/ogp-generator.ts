@@ -45,7 +45,10 @@ export class OGPGenerator {
     this.drawStones(ctx, stones, boardX, boardY);
 
     // PNG画像として保存
-    const outputDir = path.join(__dirname, '../../public/ogp');
+    const rootDir = process.env.NODE_ENV === 'production' 
+      ? path.join(__dirname, '../../..') // dist/server/utils から ルートへ
+      : path.join(__dirname, '../..');   // server/utils から ルートへ
+    const outputDir = path.join(rootDir, 'public/ogp');
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }

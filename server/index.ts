@@ -26,10 +26,23 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 静的ファイル配信
-app.use(express.static(path.join(__dirname, '../public/dist')));
-app.use('/wgo', express.static(path.join(__dirname, '../public/wgo'))); // WGo.js配信
-app.use('/problems', express.static(path.join(__dirname, '../public/problems')));
-app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')));
+// プロジェクトルートからの相対パスで指定
+const rootDir = process.env.NODE_ENV === 'production' 
+  ? path.join(__dirname, '../..') // dist/server から ルートへ
+  : path.join(__dirname, '..');   // server から ルートへ
+
+// 静的ファイルのデバッグログ
+console.log('Static files serving from:', path.join(rootDir, 'public/dist'));
+
+// placeholder-board.pngを特定のルートで配信
+app.get('/placeholder-board.png', (_req: Request, res: Response) => {
+  res.sendFile(path.join(rootDir, 'public/placeholder-board.png'));
+});
+
+app.use(express.static(path.join(rootDir, 'public/dist')));
+app.use('/wgo', express.static(path.join(rootDir, 'public/wgo'))); // WGo.js配信
+app.use('/problems', express.static(path.join(rootDir, 'public/problems')));
+app.use('/ogp', express.static(path.join(rootDir, 'public/ogp')));
 
 // API ルート
 app.use('/api', apiRoutes);
@@ -67,7 +80,7 @@ app.get('/questionnaire/:problemId', (req: Request, res: Response) => {
     res.send(html);
   } else {
     // 問題が見つからない場合は通常のSPAとして処理
-    res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+    res.sendFile(path.join(rootDir, 'public/dist/index.html'));
   }
 });
 
@@ -87,13 +100,18 @@ app.get('/results/:problemId', (req: Request, res: Response) => {
     const html = generateProblemHTML(problem.id, ogpData);
     res.send(html);
   } else {
-    res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+    res.sendFile(path.join(rootDir, 'public/dist/index.html'));
   }
 });
 
-// SPA用のフォールバック
-app.get('/*path', (req: Request, res: Response) => {
-  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
+// ルートパスへのアクセス
+app.get('/', (_req: Request, res: Response) => {
+  res.sendFile(path.join(rootDir, 'public/dist/index.html'));
+});
+
+// SPA用のフォールバック（すべてのルートをキャッチ）
+app.get('*', (_req: Request, res: Response) => {
+  res.sendFile(path.join(rootDir, 'public/dist/index.html'));
 });
 
 // サーバー終了時のクリーンアップ

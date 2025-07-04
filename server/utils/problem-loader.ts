@@ -12,7 +12,10 @@ interface ProblemData {
 }
 
 export function loadProblemFromDirectory(problemId: string): ProblemData | null {
-  const problemDir = path.join(__dirname, '../../public/problems', problemId);
+  const rootDir = process.env.NODE_ENV === 'production' 
+    ? path.join(__dirname, '../../..') // dist/server/utils から ルートへ
+    : path.join(__dirname, '../..');   // server/utils から ルートへ
+  const problemDir = path.join(rootDir, 'public/problems', problemId);
   
   try {
     // description.txt の読み込み
@@ -63,7 +66,10 @@ function parseDescriptionFile(content: string): Omit<ProblemData, 'sgfContent'> 
 
 // 全問題の一覧を取得
 export function getAllProblems(): ProblemData[] {
-  const problemsDir = path.join(__dirname, '../../public/problems');
+  const rootDir = process.env.NODE_ENV === 'production' 
+    ? path.join(__dirname, '../../..') // dist/server/utils から ルートへ
+    : path.join(__dirname, '../..');   // server/utils から ルートへ
+  const problemsDir = path.join(rootDir, 'public/problems');
   
   try {
     const problemDirs = fs.readdirSync(problemsDir, { withFileTypes: true })

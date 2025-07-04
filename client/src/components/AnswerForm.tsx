@@ -156,9 +156,11 @@ export function AnswerForm({ selectedCoordinate, onSubmit }: AnswerFormProps) {
           {errors.reason && <span className="error-message">{errors.reason}</span>}
         </div>
       
-      <button type="submit" className="submit-button">
-        SUBMIT
-      </button>
+        <div className="submit-container">
+          <button type="submit" className="submit-button">
+            SUBMIT
+          </button>
+        </div>
     </form>
     </div>
   );
