@@ -91,3 +91,39 @@ npm run build:client
 # サーバーのビルド
 npm run build:server
 ```
+
+## プロダクション環境での起動
+
+### 1. 環境変数の設定
+
+本番環境用の環境変数を設定します：
+
+```bash
+# .env ファイルを編集
+NODE_ENV=production
+PORT=3000  # サーバーポート（必要に応じて変更）
+```
+
+### 2. ビルド
+
+```bash
+# フロントエンドとサーバーをビルド
+npm run build:client
+npm run build:server
+```
+
+### 3. データベースのマイグレーション
+
+```bash
+# 本番環境のデータベースをセットアップ
+npx prisma migrate deploy
+```
+
+### 4. アプリケーションの起動
+
+```bash
+# プロダクションサーバーを起動
+npm run start
+```
+
+アプリケーションはデフォルトで http://localhost:3000 で起動します。

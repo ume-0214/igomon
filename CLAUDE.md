@@ -11,6 +11,7 @@
 ## プロジェクト構造
 ```
 /Users/ume/Workspace/igomon/
-├── igomon.md
+├── docs/
+│   └── igomon.md
 └── CLAUDE.md
 ```
