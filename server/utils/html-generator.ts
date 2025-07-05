@@ -14,7 +14,13 @@ export function generateProblemHTML(problemId: number, ogpData: OGPData): string
   const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
   ogpData.imageUrl = ogpData.imageUrl.replace('https://igomon.net', siteUrl);
   ogpData.url = ogpData.url.replace('https://igomon.net', siteUrl);
-  const templatePath = path.join(__dirname, '../../client/index.html');
+  
+  // 本番環境と開発環境でパスを切り替え
+  const rootDir = process.env.NODE_ENV === 'production' 
+    ? path.join(__dirname, '../../..') // dist/server/utils から ルートへ
+    : path.join(__dirname, '../..');   // server/utils から ルートへ
+  
+  const templatePath = path.join(rootDir, 'public/dist/index.html');
   let template = fs.readFileSync(templatePath, 'utf-8');
 
   // OGPメタタグを生成
