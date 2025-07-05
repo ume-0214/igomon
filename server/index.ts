@@ -65,6 +65,12 @@ const problemWatcher = new ProblemWatcher(io);
 // 環境変数からサイトURLを取得（デフォルトは開発環境）
 const siteUrl = process.env.SITE_URL || `http://localhost:${port}`;
 
+// OGP画像にキャッシュバスティング用のタイムスタンプを追加（日単位）
+const getOgpImageUrl = (problemId: number): string => {
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD形式
+  return `${siteUrl}/ogp/problem_${problemId}.png?v=${today}`;
+};
+
 // 問題ページへの直接アクセス時のOGP対応
 app.get('/questionnaire/:problemId', (req: Request, res: Response) => {
   const problemId = req.params.problemId;
@@ -74,7 +80,7 @@ app.get('/questionnaire/:problemId', (req: Request, res: Response) => {
     const ogpData = {
       title: `問題 ${problem.id} - いごもん`,
       description: problem.description,
-      imageUrl: `${siteUrl}/ogp/problem_${problem.id}.png`,
+      imageUrl: getOgpImageUrl(problem.id),
       url: `${siteUrl}/questionnaire/${problem.id}`
     };
     
@@ -96,7 +102,7 @@ app.get('/results/:problemId', (req: Request, res: Response) => {
     const ogpData = {
       title: `問題 ${problem.id} 結果 - いごもん`,
       description: problem.description,
-      imageUrl: `${siteUrl}/ogp/problem_${problem.id}.png`,
+      imageUrl: getOgpImageUrl(problem.id),
       url: `${siteUrl}/results/${problem.id}`
     };
     
