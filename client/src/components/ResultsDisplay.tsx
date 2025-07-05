@@ -1,5 +1,6 @@
 // client/src/components/ResultsDisplay.tsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { deleteAnswer } from '../utils/api';
 import { getUserUuid } from '../utils/uuid';
 
@@ -22,6 +23,8 @@ export function ResultsDisplay({ results, onDelete }: ResultsDisplayProps) {
   const [selectedCoordinate, setSelectedCoordinate] = useState<string | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<Answer[]>([]);
   const userUuid = getUserUuid();
+  const navigate = useNavigate();
+  const { problemId } = useParams<{ problemId: string }>();
 
   useEffect(() => {
     // 碁盤からの詳細表示イベントをリッスン
@@ -46,7 +49,8 @@ export function ResultsDisplay({ results, onDelete }: ResultsDisplayProps) {
     
     try {
       await deleteAnswer(answerId);
-      onDelete(); // 親コンポーネントで再読み込み
+      // 削除成功後、回答ページへ遷移
+      navigate(`/questionnaire/${problemId}`);
     } catch (err) {
       console.error('削除に失敗しました:', err);
       alert('削除に失敗しました');
