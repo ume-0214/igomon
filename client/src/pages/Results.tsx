@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import GoBoard from '../components/GoBoard';
 import { ResultsDisplay } from '../components/ResultsDisplay';
-import { getProblem, getResults } from '../utils/api';
+import { getProblem, getResults, hasUserAnswered } from '../utils/api';
+import { getUserUuid } from '../utils/uuid';
 
 export function Results() {
   const { problemId } = useParams<{ problemId: string }>();
@@ -16,8 +17,29 @@ export function Results() {
   useEffect(() => {
     if (!problemId) return;
     
-    loadData();
+    checkAnswerStatus();
   }, [problemId]);
+
+  const checkAnswerStatus = async () => {
+    try {
+      // ユーザーが回答済みかチェック
+      const userUuid = getUserUuid();
+      const answered = await hasUserAnswered(parseInt(problemId!), userUuid);
+      
+      if (!answered) {
+        // 未回答の場合は回答ページへリダイレクト
+        navigate(`/questionnaire/${problemId}`);
+        return;
+      }
+      
+      // 回答済みの場合はデータを読み込む
+      loadData();
+    } catch (err) {
+      console.error('回答状態の確認に失敗しました:', err);
+      setError('回答状態の確認に失敗しました');
+      setLoading(false);
+    }
+  };
 
   const loadData = async () => {
     try {
