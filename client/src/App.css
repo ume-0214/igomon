@@ -235,8 +235,9 @@ body {
 }
 
 .problem-header .turn-info {
-  font-size: 14px;
+  font-size: 20px;
   color: #666;
+  font-weight: bold;
 }
 
 .problem-description {
@@ -554,7 +555,7 @@ body {
 
 .turn-info {
   color: #666;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .back-link {
