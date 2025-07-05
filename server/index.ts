@@ -62,6 +62,9 @@ io.on('connection', (socket) => {
 // ファイル監視を開始
 const problemWatcher = new ProblemWatcher(io);
 
+// 環境変数からサイトURLを取得（デフォルトは開発環境）
+const siteUrl = process.env.SITE_URL || `http://localhost:${port}`;
+
 // 問題ページへの直接アクセス時のOGP対応
 app.get('/questionnaire/:problemId', (req: Request, res: Response) => {
   const problemId = req.params.problemId;
@@ -71,8 +74,8 @@ app.get('/questionnaire/:problemId', (req: Request, res: Response) => {
     const ogpData = {
       title: `問題 ${problem.id} - いごもん`,
       description: problem.description,
-      imageUrl: `https://igomon.net/ogp/problem_${problem.id}.png`,
-      url: `https://igomon.net/questionnaire/${problem.id}`
+      imageUrl: `${siteUrl}/ogp/problem_${problem.id}.png`,
+      url: `${siteUrl}/questionnaire/${problem.id}`
     };
     
     // OGPタグを含むHTMLを生成
@@ -93,8 +96,8 @@ app.get('/results/:problemId', (req: Request, res: Response) => {
     const ogpData = {
       title: `問題 ${problem.id} 結果 - いごもん`,
       description: problem.description,
-      imageUrl: `https://igomon.net/ogp/problem_${problem.id}.png`,
-      url: `https://igomon.net/results/${problem.id}`
+      imageUrl: `${siteUrl}/ogp/problem_${problem.id}.png`,
+      url: `${siteUrl}/results/${problem.id}`
     };
     
     const html = generateProblemHTML(problem.id, ogpData);

@@ -10,10 +10,7 @@ interface OGPData {
 }
 
 export function generateProblemHTML(problemId: number, ogpData: OGPData): string {
-  // 本番環境のURLを環境変数から取得
-  const siteUrl = process.env.SITE_URL || 'http://localhost:3000';
-  ogpData.imageUrl = ogpData.imageUrl.replace('https://igomon.net', siteUrl);
-  ogpData.url = ogpData.url.replace('https://igomon.net', siteUrl);
+  // URLはすでに適切な形式で渡されているため、置換処理は不要
   
   // 本番環境と開発環境でパスを切り替え
   const rootDir = process.env.NODE_ENV === 'production' 
