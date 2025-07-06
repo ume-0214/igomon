@@ -15,7 +15,6 @@ model Problem {
   sgfFilePath String   @map("sgf_file_path")
   description String
   turn        String   // "black" or "white"
-  createdDate String   @map("created_date")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   answers     Answer[]

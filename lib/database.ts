@@ -17,26 +17,9 @@ export async function saveAnswer(answerData: {
     where: { id: answerData.problemId }
   });
 
-  // 問題が存在しない場合は、ファイルシステムから読み込んで作成
+  // 問題が存在しない場合はエラー（全問題は事前にDBに登録済み）
   if (!problemExists) {
-    // ファイルシステムから問題データを取得
-    const { loadProblemFromDirectory } = await import('../server/utils/problem-loader');
-    const problemData = loadProblemFromDirectory(answerData.problemId.toString());
-    
-    if (!problemData) {
-      throw new Error('Problem not found');
-    }
-
-    // 問題をデータベースに作成
-    await prisma.problem.create({
-      data: {
-        id: problemData.id,
-        sgfFilePath: `problems/${problemData.id}/kifu.sgf`,
-        description: problemData.description,
-        turn: problemData.turn,
-        createdDate: problemData.createdDate
-      }
-    });
+    throw new Error('Problem not found in database');
   }
 
   return await prisma.answer.create({
@@ -87,7 +70,7 @@ export async function deleteAnswer(answerId: number, userUuid: string) {
 // 問題一覧の取得
 export async function getProblems() {
   return await prisma.problem.findMany({
-    orderBy: { createdDate: 'desc' },
+    orderBy: { createdAt: 'desc' },
     include: {
       _count: {
         select: {

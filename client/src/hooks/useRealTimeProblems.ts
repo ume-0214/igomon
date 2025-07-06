@@ -6,7 +6,8 @@ interface Problem {
   id: number;
   description: string;
   turn: string;
-  createdDate: string;
+  createdDate?: string; // 互換性のため一時的に残す
+  createdAt: string | Date;
   answerCount?: number;
 }
 
@@ -69,7 +70,7 @@ export function useRealTimeProblems() {
           } else {
             // 新規問題の追加
             return [data.problem, ...prev].sort((a, b) => 
-              new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             );
           }
         });

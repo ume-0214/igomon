@@ -62,7 +62,7 @@ export function Home() {
                         {problem.turn === 'black' ? '黒番' : '白番'}　解答
                       </span>
                       <span className="problem-date">
-                        ◎ {formatDate(problem.createdDate)}
+                        ◎ {formatDate(problem.createdAt || problem.createdDate || '')}
                       </span>
                     </div>
                   </div>

@@ -2,8 +2,11 @@
 import chokidar, { FSWatcher } from 'chokidar';
 import { Server as SocketIOServer } from 'socket.io';
 import path from 'path';
-import { loadProblemFromDirectory, getAllProblems } from './problem-loader';
+import { loadProblemFromDirectory } from './problem-loader';
+import { getProblems } from '../../lib/database';
 import { generateOGPForProblem } from './ogp-generator';
+import { problemExists } from '../../lib/database';
+import prisma from '../../lib/database';
 
 export class ProblemWatcher {
   private io: SocketIOServer;
@@ -19,12 +22,16 @@ export class ProblemWatcher {
     this.initializeWatcher();
   }
 
-  private initializeWatcher() {
+  private async initializeWatcher() {
+    // 初回起動時に既存の問題を読み込む
+    await this.loadExistingProblems();
+
     // problems ディレクトリの変更を監視
     this.watcher = chokidar.watch(this.problemsDir, {
       ignored: /node_modules/,
       persistent: true,
-      depth: 2 // 問題ディレクトリ内のファイルまで監視
+      depth: 2, // 問題ディレクトリ内のファイルまで監視
+      ignoreInitial: true // 初回のファイルイベントは無視（既に手動で読み込んだため）
     });
 
     // 新しいディレクトリが追加された場合
@@ -74,6 +81,24 @@ export class ProblemWatcher {
     }, 1000);
   }
 
+  private async loadExistingProblems() {
+    try {
+      const fs = require('fs').promises;
+      const entries = await fs.readdir(this.problemsDir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        if (entry.isDirectory() && /^\d+$/.test(entry.name)) {
+          const problemDir = path.join(this.problemsDir, entry.name);
+          await this.handleProblemUpdate(problemDir);
+        }
+      }
+      
+      console.log('Loaded existing problems');
+    } catch (error) {
+      console.error('Error loading existing problems:', error);
+    }
+  }
+
   private async handleProblemUpdate(dirPath: string) {
     const problemId = path.basename(dirPath);
     
@@ -83,6 +108,22 @@ export class ProblemWatcher {
       
       if (problemData) {
         console.log(`Problem updated: ${problemId}`);
+        
+        // データベースに問題が存在するか確認
+        const exists = await problemExists(problemData.id);
+        
+        if (!exists) {
+          // 問題がデータベースに存在しない場合は新規登録
+          await prisma.problem.create({
+            data: {
+              id: problemData.id,
+              sgfFilePath: `/problems/${problemData.id}/kifu.sgf`,
+              description: problemData.description,
+              turn: problemData.turn as 'black' | 'white',
+            }
+          });
+          console.log(`Problem ${problemId} registered in database`);
+        }
         
         // OGP画像を生成
         try {
@@ -99,7 +140,7 @@ export class ProblemWatcher {
         });
         
         // 問題一覧全体も送信（新規追加の場合）
-        const allProblems = getAllProblems();
+        const allProblems = await getProblems();
         this.io.emit('problemsListUpdated', allProblems);
       }
     } catch (error) {

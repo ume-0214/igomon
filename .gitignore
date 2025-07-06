@@ -43,7 +43,7 @@ coverage/
 .cache/
 
 .DS_Store
-test-local.sh
+scripts/
 
 # Sandbox
 sandbox/

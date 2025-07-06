@@ -8,7 +8,8 @@ import {
   getProblem,
   hasUserAnswered 
 } from '../../lib/database';
-import { loadProblemFromDirectory, getAllProblems } from '../utils/problem-loader';
+import { loadProblemFromDirectory } from '../utils/problem-loader';
+import { createProblem } from '../../src/app/api/problems/create/route';
 import prisma from '../../lib/database';
 
 const router = express.Router() as any;
@@ -76,37 +77,33 @@ router.delete('/answers/:answerId', async (req: Request, res: Response) => {
   }
 });
 
-// 問題一覧取得（ファイルベース + データベース統合）
+// 問題一覧取得（データベースから取得）
 router.get('/problems', async (req: Request, res: Response) => {
   try {
-    // ファイルシステムから問題一覧を取得
-    const fileProblems = getAllProblems();
-    
-    // データベースの回答数も含めて返す
-    const problemsWithCounts = await Promise.all(
-      fileProblems.map(async (problem) => {
-        try {
-          const answerCount = await prisma.answer.count({
-            where: {
-              problemId: problem.id,
-              isDeleted: false
+    // データベースから問題一覧を取得
+    const problems = await prisma.problem.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: {
+            answers: {
+              where: { isDeleted: false }
             }
-          });
-          
-          return {
-            ...problem,
-            answerCount
-          };
-        } catch (dbError) {
-          // データベースエラーの場合は回答数を0として続行
-          console.warn(`Database error for problem ${problem.id}:`, dbError);
-          return {
-            ...problem,
-            answerCount: 0
-          };
+          }
         }
-      })
-    );
+      }
+    });
+    
+    // レスポンス形式を整形
+    const problemsWithCounts = problems.map(problem => ({
+      id: problem.id,
+      sgfFilePath: problem.sgfFilePath,
+      description: problem.description,
+      turn: problem.turn,
+      createdDate: problem.createdAt.toISOString().split('T')[0], // 互換性のため一時的に残す
+      createdAt: problem.createdAt,
+      answerCount: problem._count.answers
+    }));
     
     res.json(problemsWithCounts);
   } catch (error) {
@@ -167,5 +164,8 @@ router.get('/problems/:problemId/answered', async (req: Request, res: Response) 
     res.status(500).json({ error: 'Failed to check answer status' });
   }
 });
+
+// 問題作成
+router.post('/problems', createProblem);
 
 export default router;

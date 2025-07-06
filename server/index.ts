@@ -6,8 +6,9 @@ import cors from 'cors';
 import path from 'path';
 import apiRoutes from './routes/api';
 import { ProblemWatcher } from './utils/file-watcher';
-import { getAllProblems, loadProblemFromDirectory } from './utils/problem-loader';
+import { loadProblemFromDirectory } from './utils/problem-loader';
 import { generateProblemHTML } from './utils/html-generator';
+import { getProblems } from '../lib/database';
 
 const app = express();
 const server = createServer(app);
@@ -48,11 +49,12 @@ app.use('/ogp', express.static(path.join(rootDir, 'public/ogp')));
 app.use('/api', apiRoutes);
 
 // WebSocket接続処理
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log('Client connected:', socket.id);
   
   // 接続時に現在の問題一覧を送信
-  socket.emit('initialProblems', getAllProblems());
+  const problems = await getProblems();
+  socket.emit('initialProblems', problems);
   
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);

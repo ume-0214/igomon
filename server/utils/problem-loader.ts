@@ -5,7 +5,6 @@ import path from 'path';
 interface ProblemData {
   id: number;
   turn: string;
-  createdDate: string;
   description: string;
   sgfContent: string;
   moves?: number;
@@ -30,6 +29,7 @@ export function loadProblemFromDirectory(problemId: string): ProblemData | null 
     const problemData = parseDescriptionFile(descriptionContent);
     
     return {
+      id: parseInt(problemId),
       ...problemData,
       sgfContent
     };
@@ -39,7 +39,7 @@ export function loadProblemFromDirectory(problemId: string): ProblemData | null 
   }
 }
 
-function parseDescriptionFile(content: string): Omit<ProblemData, 'sgfContent'> {
+function parseDescriptionFile(content: string): Omit<ProblemData, 'sgfContent' | 'id'> {
   const lines = content.trim().split('\n');
   const data: any = {};
   
@@ -50,47 +50,14 @@ function parseDescriptionFile(content: string): Omit<ProblemData, 'sgfContent'> 
     }
   });
   
-  // 必須項目のチェック
-  if (!data.id || !data.turn || !data.created || !data.description) {
-    throw new Error('必須項目が不足しています: id, turn, created, description');
+  // 必須項目のチェック（新フォーマット）
+  if (!data.turn || !data.description) {
+    throw new Error('必須項目が不足しています: turn, description');
   }
   
   return {
-    id: parseInt(data.id),
     turn: data.turn,
-    createdDate: data.created,
     description: data.description,
     moves: data.moves ? parseInt(data.moves) : undefined
   };
-}
-
-// 全問題の一覧を取得
-export function getAllProblems(): ProblemData[] {
-  const rootDir = process.env.NODE_ENV === 'production' 
-    ? path.join(__dirname, '../../..') // dist/server/utils から ルートへ
-    : path.join(__dirname, '../..');   // server/utils から ルートへ
-  const problemsDir = path.join(rootDir, 'public/problems');
-  
-  try {
-    const problemDirs = fs.readdirSync(problemsDir, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory())
-      .map(dirent => dirent.name);
-    
-    const problems: ProblemData[] = [];
-    
-    problemDirs.forEach(dirName => {
-      const problemData = loadProblemFromDirectory(dirName);
-      if (problemData) {
-        problems.push(problemData);
-      }
-    });
-    
-    // 作成日時順でソート（新しい順）
-    return problems.sort((a, b) => 
-      new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
-    );
-  } catch (error) {
-    console.error('Failed to load problems:', error);
-    return [];
-  }
 }
