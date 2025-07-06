@@ -79,9 +79,10 @@ app.get('/questionnaire/:problemId', (req: Request, res: Response) => {
   const problem = loadProblemFromDirectory(problemId);
   
   if (problem) {
+    const turnText = problem.turn === 'black' ? '黒番' : '白番';
     const ogpData = {
       title: `問題 ${problem.id} - いごもん`,
-      description: problem.description,
+      description: `${turnText}: ${problem.description}`,
       imageUrl: getOgpImageUrl(problem.id),
       url: `${siteUrl}/questionnaire/${problem.id}`
     };
@@ -101,9 +102,10 @@ app.get('/results/:problemId', (req: Request, res: Response) => {
   const problem = loadProblemFromDirectory(problemId);
   
   if (problem) {
+    const turnText = problem.turn === 'black' ? '黒番' : '白番';
     const ogpData = {
       title: `問題 ${problem.id} 結果 - いごもん`,
-      description: problem.description,
+      description: `${turnText}: ${problem.description}`,
       imageUrl: getOgpImageUrl(problem.id),
       url: `${siteUrl}/results/${problem.id}`
     };

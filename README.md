@@ -69,16 +69,12 @@ npm run dev:client
 ### description.txt の形式
 
 ```
-id: 1
 turn: black
-created: 2025-06-29
 moves: 30
 description: 次の一手を考えてください。着手とその理由を回答してください。
 ```
 
-- **id**: 問題番号（必須）
 - **turn**: 手番（black または white）（必須）
-- **created**: 作成日（YYYY-MM-DD形式）（必須）
 - **moves**: 表示する手数（任意、省略時は最終手まで）
 - **description**: 問題の説明文（必須）
 
