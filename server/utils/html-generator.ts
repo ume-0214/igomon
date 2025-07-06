@@ -1,12 +1,12 @@
 // server/utils/html-generator.ts
-import fs from 'fs';
-import path from 'path';
+import fs from 'fs'
+import path from 'path'
 
 interface OGPData {
-  title: string;
-  description: string;
-  imageUrl: string;
-  url: string;
+  title: string
+  description: string
+  imageUrl: string
+  url: string
 }
 
 // HTMLエスケープ関数
@@ -16,21 +16,22 @@ function escapeHtml(text: string): string {
     '<': '&lt;',
     '>': '&gt;',
     '"': '&quot;',
-    "'": '&#39;'
-  };
-  return text.replace(/[&<>"']/g, m => map[m]);
+    "'": '&#39;',
+  }
+  return text.replace(/[&<>"']/g, (m) => map[m])
 }
 
 export function generateProblemHTML(problemId: number, ogpData: OGPData): string {
   // URLはすでに適切な形式で渡されているため、置換処理は不要
-  
+
   // 本番環境と開発環境でパスを切り替え
-  const rootDir = process.env.NODE_ENV === 'production' 
-    ? path.join(__dirname, '../../..') // dist/server/utils から ルートへ
-    : path.join(__dirname, '../..');   // server/utils から ルートへ
-  
-  const templatePath = path.join(rootDir, 'public/dist/index.html');
-  let template = fs.readFileSync(templatePath, 'utf-8');
+  const rootDir =
+    process.env.NODE_ENV === 'production'
+      ? path.join(__dirname, '../../..') // dist/server/utils から ルートへ
+      : path.join(__dirname, '../..') // server/utils から ルートへ
+
+  const templatePath = path.join(rootDir, 'public/dist/index.html')
+  let template = fs.readFileSync(templatePath, 'utf-8')
 
   // OGPメタタグを生成（Discord/Twitter対応強化）
   const ogpTags = `
@@ -55,16 +56,13 @@ export function generateProblemHTML(problemId: number, ogpData: OGPData): string
     
     <!-- Additional Meta Tags -->
     <meta name="description" content="${escapeHtml(ogpData.description)}">
-    <link rel="canonical" href="${ogpData.url}">`;
+    <link rel="canonical" href="${ogpData.url}">`
 
   // </head>タグの前にOGPタグを挿入
-  template = template.replace('</head>', `${ogpTags}\n  </head>`);
-  
-  // タイトルも更新
-  template = template.replace(
-    '<title>いごもん</title>',
-    `<title>${ogpData.title}</title>`
-  );
+  template = template.replace('</head>', `${ogpTags}\n  </head>`)
 
-  return template;
+  // タイトルも更新
+  template = template.replace('<title>いごもん</title>', `<title>${ogpData.title}</title>`)
+
+  return template
 }

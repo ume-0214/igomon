@@ -1,0 +1,23 @@
+# 依存関係
+node_modules/
+client/node_modules/
+
+# ビルド出力
+dist/
+build/
+client/dist/
+
+# データベース
+prisma/migrations/
+
+# 設定ファイル
+*.config.js
+*.config.ts
+
+# その他
+coverage/
+*.min.js
+*.min.css
+.DS_Store
+.env
+.env.*

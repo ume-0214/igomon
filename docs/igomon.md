@@ -69,6 +69,7 @@ Google/XなどのSNSログイン機能は使用しない [user request]。
 **ORマッパー:** Prisma を使用（型安全性、スキーマ管理、マイグレーション機能のため）
 
 SQLiteを選択する理由：
+
 - XServerの共有サーバー環境に適している
 - ファイルベースで管理が簡単
 - バックアップは単純なファイルコピー
@@ -137,12 +138,15 @@ description: 着手とその理由を回答してください。
 ## 5. UIイメージ
 
 ### アンケート回答ページのイメージ
+
 ![アンケート回答ページ](docs/png/アンケート回答ページイメージ.png)
 
 ### アンケート結果表示ページのイメージ
+
 ![アンケート結果表示ページ](docs/png/アンケート結果ページイメージ2.png)
 
 ### サイトトップページのイメージ
+
 ![サイトトップページ](docs/png/サイトトップページイメージ.png)
 
 ## 6. 実装対象外（除外機能）
@@ -160,17 +164,18 @@ description: 着手とその理由を回答してください。
 ### 7.1. ユーザー識別システム
 
 **ユーザーID生成:**
+
 - 投稿時にUUID（v4）を生成してユーザーを識別
 - UUIDはローカルストレージに保存（推奨）
 - サーバー側では認証なしで、UUIDの一致確認により投稿者を特定
 - UUID衝突対策として、crypto.randomUUID()を使用（暗号学的に安全）
 
 **実装方針:**
+
 ```javascript
 // 初回アクセス時またはUUIDが存在しない場合
-const userUuid = localStorage.getItem('igomon_user_uuid') || 
-                crypto.randomUUID();
-localStorage.setItem('igomon_user_uuid', userUuid);
+const userUuid = localStorage.getItem('igomon_user_uuid') || crypto.randomUUID()
+localStorage.setItem('igomon_user_uuid', userUuid)
 ```
 
 ### 7.2. 削除機能の実装
@@ -178,6 +183,7 @@ localStorage.setItem('igomon_user_uuid', userUuid);
 **削除方式:** 論理削除（物理削除は行わない）
 
 **削除フロー:**
+
 1. ユーザーが自分の投稿の「削除」ボタンをクリック
 2. フロントエンドからローカルストレージのUUIDを含むDELETEリクエスト送信
 3. サーバー側でUUIDの一致を確認
@@ -185,18 +191,21 @@ localStorage.setItem('igomon_user_uuid', userUuid);
 5. 得票数を再計算して結果表示を更新
 
 **削除権限:**
+
 - 結果表示ページで自分の投稿のみに「削除」ボタンを表示
 - UUIDが一致する投稿のみ削除可能
 
 ### 7.3. SGFファイル処理
 
 **使用ライブラリ:** WGo.js
+
 - https://wgo.waltheri.net/download からダウンロードして使用
 - SGF解析、盤面描画、座標変換を統合サポート
 - Canvas/SVG両対応でレスポンシブ
 - 19路盤のみ対応
 
 **表示仕様:**
+
 - SGFファイルから指定手数まで（またはdescription.txtのmovesパラメータまで）の局面を表示
 - movesパラメータが指定されていない場合は最終手まで表示
 - コメントやバリエーションは無視する
@@ -204,12 +213,14 @@ localStorage.setItem('igomon_user_uuid', userUuid);
 - クリック座標は自動的にSGF形式に変換してフォームに入力
 
 **座標システム:**
+
 - データベース保存: SGF座標（aa, ab, ac...）
 - 内部処理: 数値座標 (0,0)〜(18,18)
 - UI表示: 標準囲碁記法（A1〜T19）
 - WGo.jsの座標変換機能を活用
 
 **座標の対応関係:**
+
 - A19 = WGo.js (0, 0) = SGF "aa"
 - T19 = WGo.js (18, 0) = SGF "sa"
 - A1 = WGo.js (0, 18) = SGF "as"
@@ -227,12 +238,13 @@ WGo.jsの`addObject()`メソッドを使用して、碁盤上の各交点に投�
    - `board.addObject({x, y, type: "LB", text: "票数"})`
 
 2. **実装例**
+
 ```javascript
 // 各投票データに対して石とラベルを配置
-votes.forEach(v => {
-    board.addObject({ x: v.x, y: v.y, c: WGo.B });  // 石を配置
-    board.addObject({ x: v.x, y: v.y, type: "LB", text: String(v.votes) });  // 票数ラベル
-});
+votes.forEach((v) => {
+  board.addObject({ x: v.x, y: v.y, c: WGo.B }) // 石を配置
+  board.addObject({ x: v.x, y: v.y, type: 'LB', text: String(v.votes) }) // 票数ラベル
+})
 ```
 
 3. **投票数による色分け表示**
@@ -243,6 +255,7 @@ votes.forEach(v => {
 ### 7.4. データベース設計（Prisma + SQLite）
 
 **Prismaスキーマ:**
+
 ```prisma
 // prisma/schema.prisma
 generator client {
@@ -278,7 +291,7 @@ model Answer {
   isDeleted   Boolean  @default(false) @map("is_deleted")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  
+
   problem     Problem  @relation(fields: [problemId], references: [id])
 
   @@index([problemId])
@@ -292,41 +305,43 @@ model Answer {
 ### 7.5. 結果表示機能
 
 **盤面表示:**
+
 - WGo.jsを使用して盤面上に得票数を数字で表示
 - 得票数に応じた色分けやサイズ調整が可能
 - 数字クリック時に該当座標の回答一覧を表示
 
 **実装例:**
+
 ```javascript
 // 結果データを盤面に表示
-results.forEach(result => {
-    const coords = sgfToWgoCoords(result.coordinate);
-    board.addObject({
-        x: coords.x, y: coords.y,
-        type: "mark",
-        mark: {
-            type: "label",
-            text: result.votes.toString(),
-            color: getColorByVotes(result.votes)
-        }
-    });
-});
+results.forEach((result) => {
+  const coords = sgfToWgoCoords(result.coordinate)
+  board.addObject({
+    x: coords.x,
+    y: coords.y,
+    type: 'mark',
+    mark: {
+      type: 'label',
+      text: result.votes.toString(),
+      color: getColorByVotes(result.votes),
+    },
+  })
+})
 
 // 座標変換関数
 function sgfToWgoCoords(sgf) {
-    const x = sgf.charCodeAt(0) - 'a'.charCodeAt(0);
-    const y = sgf.charCodeAt(1) - 'a'.charCodeAt(0);
-    return { x, y };
+  const x = sgf.charCodeAt(0) - 'a'.charCodeAt(0)
+  const y = sgf.charCodeAt(1) - 'a'.charCodeAt(0)
+  return { x, y }
 }
 
 function wgoToSgfCoords(x, y) {
-    return String.fromCharCode('a'.charCodeAt(0) + x) + 
-           String.fromCharCode('a'.charCodeAt(0) + y);
+  return String.fromCharCode('a'.charCodeAt(0) + x) + String.fromCharCode('a'.charCodeAt(0) + y)
 }
 
 function wgoToStandardNotation(x, y) {
-    const letters = 'ABCDEFGHJKLMNOPQRST'; // Iを除く
-    return letters[x] + (19 - y);
+  const letters = 'ABCDEFGHJKLMNOPQRST' // Iを除く
+  return letters[x] + (19 - y)
 }
 ```
 
@@ -335,31 +350,33 @@ function wgoToStandardNotation(x, y) {
 **推奨方法:** Node.js + Canvas
 
 **実装戦略:**
+
 1. problems/ディレクトリに新規ファイルが配置された時に自動実行
 2. SGFファイルを解析して盤面状態を取得（movesパラメータまで）
 3. Canvasで19x19の碁盤を描画
 4. 石を配置して1200x630pxのPNG画像として生成
-5. public/ogp/problem_{id}.png として保存
+5. public/ogp/problem\_{id}.png として保存
 6. 画像にタイトルや問題番号は含めない（盤面のみ）
 
 **実装例:**
+
 ```javascript
-const { createCanvas } = require('canvas');
+const { createCanvas } = require('canvas')
 
 function generateOgpImage(sgfContent, problemId) {
-    const canvas = createCanvas(600, 600);
-    const ctx = canvas.getContext('2d');
-    
-    // 碁盤を描画
-    drawBoard(ctx);
-    
-    // SGFから石の配置を読み込んで描画
-    const stones = parseSgf(sgfContent);
-    drawStones(ctx, stones);
-    
-    // PNG画像として保存
-    const buffer = canvas.toBuffer('image/png');
-    fs.writeFileSync(`public/ogp/problem_${problemId}.png`, buffer);
+  const canvas = createCanvas(600, 600)
+  const ctx = canvas.getContext('2d')
+
+  // 碁盤を描画
+  drawBoard(ctx)
+
+  // SGFから石の配置を読み込んで描画
+  const stones = parseSgf(sgfContent)
+  drawStones(ctx, stones)
+
+  // PNG画像として保存
+  const buffer = canvas.toBuffer('image/png')
+  fs.writeFileSync(`public/ogp/problem_${problemId}.png`, buffer)
 }
 ```
 
@@ -377,14 +394,15 @@ GET  /api/sgf/{problem_id}          # SGFファイル取得
 ```
 
 **投稿データ形式:**
+
 ```json
 {
-    "problem_id": 1,
-    "user_uuid": "550e8400-e29b-41d4-a716-446655440000",
-    "coordinate": "dd",
-    "reason": "この手が最も効率的だと思います",
-    "player_name": "田中太郎",
-    "player_rank": "3段"
+  "problem_id": 1,
+  "user_uuid": "550e8400-e29b-41d4-a716-446655440000",
+  "coordinate": "dd",
+  "reason": "この手が最も効率的だと思います",
+  "player_name": "田中太郎",
+  "player_rank": "3段"
 }
 ```
 
@@ -393,6 +411,7 @@ GET  /api/sgf/{problem_id}          # SGFファイル取得
 ### 8.1. 推奨技術スタック
 
 **フルスタック構成:**
+
 - **フロントエンド:** React + TypeScript
 - **バックエンド:** Express.js + TypeScript
 - **データベース:** SQLite + Prisma
@@ -497,62 +516,62 @@ igomon-app/
 
 ```typescript
 // lib/database.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient()
 
 // 回答の保存
 export async function saveAnswer(answerData: {
-  problemId: number;
-  userUuid: string;
-  coordinate: string;
-  reason: string;
-  playerName: string;
-  playerRank: string;
+  problemId: number
+  userUuid: string
+  coordinate: string
+  reason: string
+  playerName: string
+  playerRank: string
 }) {
   return await prisma.answer.create({
-    data: answerData
-  });
+    data: answerData,
+  })
 }
 
 // 結果の取得
 export async function getResults(problemId: number) {
   const answers = await prisma.answer.findMany({
-    where: { 
-      problemId: problemId, 
-      isDeleted: false 
+    where: {
+      problemId: problemId,
+      isDeleted: false,
     },
-    orderBy: { createdAt: 'asc' }
-  });
-  
+    orderBy: { createdAt: 'asc' },
+  })
+
   // 座標ごとの集計
-  const results: Record<string, { votes: number; answers: any[] }> = {};
-  answers.forEach(answer => {
+  const results: Record<string, { votes: number; answers: any[] }> = {}
+  answers.forEach((answer) => {
     if (!results[answer.coordinate]) {
-      results[answer.coordinate] = { votes: 0, answers: [] };
+      results[answer.coordinate] = { votes: 0, answers: [] }
     }
-    results[answer.coordinate].votes++;
-    results[answer.coordinate].answers.push(answer);
-  });
-  
-  return results;
+    results[answer.coordinate].votes++
+    results[answer.coordinate].answers.push(answer)
+  })
+
+  return results
 }
 
 // 回答の削除（論理削除）
 export async function deleteAnswer(answerId: number, userUuid: string) {
   const result = await prisma.answer.updateMany({
-    where: { 
-      id: answerId, 
+    where: {
+      id: answerId,
       userUuid: userUuid,
-      isDeleted: false 
+      isDeleted: false,
     },
-    data: { 
+    data: {
       isDeleted: true,
-      updatedAt: new Date()
-    }
-  });
-  
-  return result.count > 0;
+      updatedAt: new Date(),
+    },
+  })
+
+  return result.count > 0
 }
 
 // 問題一覧の取得
@@ -563,28 +582,28 @@ export async function getProblems() {
       _count: {
         select: {
           answers: {
-            where: { isDeleted: false }
-          }
-        }
-      }
-    }
-  });
+            where: { isDeleted: false },
+          },
+        },
+      },
+    },
+  })
 }
 
 // 問題の詳細取得
 export async function getProblem(problemId: number) {
   return await prisma.problem.findUnique({
-    where: { id: problemId }
-  });
+    where: { id: problemId },
+  })
 }
 
 // 問題の存在確認（ID重複チェック用）
 export async function problemExists(problemId: number) {
   const problem = await prisma.problem.findUnique({
     where: { id: problemId },
-    select: { id: true }
-  });
-  return !!problem;
+    select: { id: true },
+  })
+  return !!problem
 }
 
 // ユーザーが既に回答済みかチェック
@@ -593,233 +612,233 @@ export async function hasUserAnswered(problemId: number, userUuid: string) {
     where: {
       problemId: problemId,
       userUuid: userUuid,
-      isDeleted: false
-    }
-  });
-  return !!answer;
+      isDeleted: false,
+    },
+  })
+  return !!answer
 }
 
-export default prisma;
+export default prisma
 ```
 
 ### 8.5. API実装例（Express.js + Prisma）
 
 ```typescript
 // server/routes/api.ts
-import express from 'express';
-import { 
-  saveAnswer, 
-  getResults, 
-  deleteAnswer, 
+import express from 'express'
+import {
+  saveAnswer,
+  getResults,
+  deleteAnswer,
   getProblems,
   getProblem,
-  hasUserAnswered 
-} from '../lib/database';
+  hasUserAnswered,
+} from '../lib/database'
 
-const router = express.Router();
+const router = express.Router()
 
 // 回答投稿
 router.post('/answers', async (req, res) => {
   try {
-    const { problemId, userUuid, coordinate, reason, playerName, playerRank } = req.body;
-    
+    const { problemId, userUuid, coordinate, reason, playerName, playerRank } = req.body
+
     // 既に回答済みかチェック
-    const alreadyAnswered = await hasUserAnswered(problemId, userUuid);
+    const alreadyAnswered = await hasUserAnswered(problemId, userUuid)
     if (alreadyAnswered) {
-      return res.status(400).json({ error: 'Already answered this problem' });
+      return res.status(400).json({ error: 'Already answered this problem' })
     }
-    
+
     const result = await saveAnswer({
       problemId,
       userUuid,
       coordinate,
       reason,
       playerName,
-      playerRank
-    });
-    
-    res.json(result);
+      playerRank,
+    })
+
+    res.json(result)
   } catch (error) {
-    console.error('Error saving answer:', error);
-    res.status(500).json({ error: 'Failed to save answer' });
+    console.error('Error saving answer:', error)
+    res.status(500).json({ error: 'Failed to save answer' })
   }
-});
+})
 
 // 結果取得
 router.get('/results/:problemId', async (req, res) => {
   try {
-    const problemId = parseInt(req.params.problemId);
-    const results = await getResults(problemId);
-    res.json(results);
+    const problemId = parseInt(req.params.problemId)
+    const results = await getResults(problemId)
+    res.json(results)
   } catch (error) {
-    console.error('Error getting results:', error);
-    res.status(500).json({ error: 'Failed to get results' });
+    console.error('Error getting results:', error)
+    res.status(500).json({ error: 'Failed to get results' })
   }
-});
+})
 
 // 回答削除
 router.delete('/answers/:answerId', async (req, res) => {
   try {
-    const answerId = parseInt(req.params.answerId);
-    const { userUuid } = req.body;
-    
-    const success = await deleteAnswer(answerId, userUuid);
-    
+    const answerId = parseInt(req.params.answerId)
+    const { userUuid } = req.body
+
+    const success = await deleteAnswer(answerId, userUuid)
+
     if (success) {
-      res.json({ success: true });
+      res.json({ success: true })
     } else {
-      res.status(404).json({ error: 'Answer not found or not authorized' });
+      res.status(404).json({ error: 'Answer not found or not authorized' })
     }
   } catch (error) {
-    console.error('Error deleting answer:', error);
-    res.status(500).json({ error: 'Failed to delete answer' });
+    console.error('Error deleting answer:', error)
+    res.status(500).json({ error: 'Failed to delete answer' })
   }
-});
+})
 
 // 問題一覧取得
 router.get('/problems', async (req, res) => {
   try {
-    const problems = await getProblems();
-    res.json(problems);
+    const problems = await getProblems()
+    res.json(problems)
   } catch (error) {
-    console.error('Error getting problems:', error);
-    res.status(500).json({ error: 'Failed to get problems' });
+    console.error('Error getting problems:', error)
+    res.status(500).json({ error: 'Failed to get problems' })
   }
-});
+})
 
 // 問題詳細取得
 router.get('/problems/:problemId', async (req, res) => {
   try {
-    const problemId = parseInt(req.params.problemId);
-    const problem = await getProblem(problemId);
-    
+    const problemId = parseInt(req.params.problemId)
+    const problem = await getProblem(problemId)
+
     if (!problem) {
-      return res.status(404).json({ error: 'Problem not found' });
+      return res.status(404).json({ error: 'Problem not found' })
     }
-    
-    res.json(problem);
+
+    res.json(problem)
   } catch (error) {
-    console.error('Error getting problem:', error);
-    res.status(500).json({ error: 'Failed to get problem' });
+    console.error('Error getting problem:', error)
+    res.status(500).json({ error: 'Failed to get problem' })
   }
-});
+})
 
 // SGFファイル取得
 router.get('/sgf/:problemId', (req, res) => {
   try {
-    const problemId = req.params.problemId;
-    const problemData = loadProblemFromDirectory(problemId);
-    
+    const problemId = req.params.problemId
+    const problemData = loadProblemFromDirectory(problemId)
+
     if (!problemData) {
-      return res.status(404).json({ error: 'Problem not found' });
+      return res.status(404).json({ error: 'Problem not found' })
     }
-    
-    res.setHeader('Content-Type', 'application/x-go-sgf');
-    res.send(problemData.sgfContent);
+
+    res.setHeader('Content-Type', 'application/x-go-sgf')
+    res.send(problemData.sgfContent)
   } catch (error) {
-    console.error('Error getting SGF:', error);
-    res.status(500).json({ error: 'Failed to get SGF' });
+    console.error('Error getting SGF:', error)
+    res.status(500).json({ error: 'Failed to get SGF' })
   }
-});
+})
 
 // 問題一覧取得（ファイルベース + データベース統合）
 router.get('/problems', async (req, res) => {
   try {
     // ファイルシステムから問題一覧を取得
-    const fileProblems = getAllProblems();
-    
+    const fileProblems = getAllProblems()
+
     // データベースの回答数も含めて返す
     const problemsWithCounts = await Promise.all(
       fileProblems.map(async (problem) => {
         const answerCount = await prisma.answer.count({
           where: {
             problemId: problem.id,
-            isDeleted: false
-          }
-        });
-        
+            isDeleted: false,
+          },
+        })
+
         return {
           ...problem,
-          answerCount
-        };
-      })
-    );
-    
-    res.json(problemsWithCounts);
+          answerCount,
+        }
+      }),
+    )
+
+    res.json(problemsWithCounts)
   } catch (error) {
-    console.error('Error getting problems:', error);
-    res.status(500).json({ error: 'Failed to get problems' });
+    console.error('Error getting problems:', error)
+    res.status(500).json({ error: 'Failed to get problems' })
   }
-});
+})
 ```
 
 ### 8.6. Expressサーバー設定
 
 ```typescript
 // server/index.ts
-import express from 'express';
-import { createServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
-import cors from 'cors';
-import path from 'path';
-import apiRoutes from './routes/api';
-import { ProblemWatcher } from './utils/file-watcher';
-import { getAllProblems } from './utils/problem-loader';
+import express from 'express'
+import { createServer } from 'http'
+import { Server as SocketIOServer } from 'socket.io'
+import cors from 'cors'
+import path from 'path'
+import apiRoutes from './routes/api'
+import { ProblemWatcher } from './utils/file-watcher'
+import { getAllProblems } from './utils/problem-loader'
 
-const app = express();
-const server = createServer(app);
+const app = express()
+const server = createServer(app)
 const io = new SocketIOServer(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+})
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000
 
 // ミドルウェア
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors())
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
 // 静的ファイル配信
-app.use(express.static(path.join(__dirname, '../public/dist')));
-app.use('/wgo', express.static(path.join(__dirname, '../public/wgo'))); // WGo.js配信
-app.use('/problems', express.static(path.join(__dirname, '../public/problems')));
-app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')));
+app.use(express.static(path.join(__dirname, '../public/dist')))
+app.use('/wgo', express.static(path.join(__dirname, '../public/wgo'))) // WGo.js配信
+app.use('/problems', express.static(path.join(__dirname, '../public/problems')))
+app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')))
 
 // API ルート
-app.use('/api', apiRoutes);
+app.use('/api', apiRoutes)
 
 // WebSocket接続処理
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-  
+  console.log('Client connected:', socket.id)
+
   // 接続時に現在の問題一覧を送信
-  socket.emit('initialProblems', getAllProblems());
-  
+  socket.emit('initialProblems', getAllProblems())
+
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
-  });
-});
+    console.log('Client disconnected:', socket.id)
+  })
+})
 
 // ファイル監視を開始
-const problemWatcher = new ProblemWatcher(io);
+const problemWatcher = new ProblemWatcher(io)
 
 // SPA用のフォールバック
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
-});
+  res.sendFile(path.join(__dirname, '../public/dist/index.html'))
+})
 
 // サーバー終了時のクリーンアップ
 process.on('SIGTERM', () => {
-  problemWatcher.destroy();
-  server.close();
-});
+  problemWatcher.destroy()
+  server.close()
+})
 
 server.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+  console.log(`Server running on port ${port}`)
+})
 ```
 
 ### 8.7. フロントエンド実装例
@@ -827,24 +846,24 @@ server.listen(port, () => {
 ```typescript
 // client/src/utils/uuid.ts
 export function getUserUuid(): string {
-  let uuid = localStorage.getItem('igomon_user_uuid');
+  let uuid = localStorage.getItem('igomon_user_uuid')
   if (!uuid) {
-    uuid = crypto.randomUUID();
-    localStorage.setItem('igomon_user_uuid', uuid);
+    uuid = crypto.randomUUID()
+    localStorage.setItem('igomon_user_uuid', uuid)
   }
-  return uuid;
+  return uuid
 }
 
 // client/src/utils/api.ts
 export async function submitAnswer(answerData: {
-  problemId: number;
-  coordinate: string;
-  reason: string;
-  playerName: string;
-  playerRank: string;
+  problemId: number
+  coordinate: string
+  reason: string
+  playerName: string
+  playerRank: string
 }) {
-  const userUuid = getUserUuid();
-  
+  const userUuid = getUserUuid()
+
   const response = await fetch('/api/answers', {
     method: 'POST',
     headers: {
@@ -852,41 +871,41 @@ export async function submitAnswer(answerData: {
     },
     body: JSON.stringify({
       ...answerData,
-      userUuid
+      userUuid,
     }),
-  });
-  
+  })
+
   if (!response.ok) {
-    throw new Error('Failed to submit answer');
+    throw new Error('Failed to submit answer')
   }
-  
-  return response.json();
+
+  return response.json()
 }
 
 export async function getResults(problemId: number) {
-  const response = await fetch(`/api/results/${problemId}`);
+  const response = await fetch(`/api/results/${problemId}`)
   if (!response.ok) {
-    throw new Error('Failed to get results');
+    throw new Error('Failed to get results')
   }
-  return response.json();
+  return response.json()
 }
 
 export async function deleteAnswer(answerId: number) {
-  const userUuid = getUserUuid();
-  
+  const userUuid = getUserUuid()
+
   const response = await fetch(`/api/answers/${answerId}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ userUuid }),
-  });
-  
+  })
+
   if (!response.ok) {
-    throw new Error('Failed to delete answer');
+    throw new Error('Failed to delete answer')
   }
-  
-  return response.json();
+
+  return response.json()
 }
 ```
 
@@ -919,21 +938,24 @@ npm run dev:server  # バックエンド
 ### 8.9. XServerデプロイ手順
 
 1. **ビルド実行:**
+
 ```bash
 npm run build:client  # React アプリのビルド
 npm run build:server  # TypeScript サーバーのビルド
 ```
 
 2. **ファイルアップロード:**
+
 - `public/dist/` → XServer 公開ディレクトリ
 - `dist/server/` → Node.js アプリディレクトリ
 - `prisma/` → Prisma 設定ファイル
 - `igomon.db` → SQLite データベースファイル
 
 3. **XServer での起動設定:**
+
 ```javascript
 // XServer用の起動ファイル
-const app = require('./dist/server/index.js');
+const app = require('./dist/server/index.js')
 ```
 
 この構成により、XServerの制約下でもPrismaを使用した型安全で保守しやすい「いごもん」アプリケーションを構築できます。
@@ -942,92 +964,93 @@ const app = require('./dist/server/index.js');
 
 ```typescript
 // server/utils/problem-loader.ts
-import fs from 'fs';
-import path from 'path';
+import fs from 'fs'
+import path from 'path'
 
 interface ProblemData {
-  id: number;
-  turn: string;
-  createdDate: string;
-  description: string;
-  sgfContent: string;
+  id: number
+  turn: string
+  createdDate: string
+  description: string
+  sgfContent: string
 }
 
 export function loadProblemFromDirectory(problemId: string): ProblemData | null {
-  const problemDir = path.join(__dirname, '../../public/problems', problemId);
-  
+  const problemDir = path.join(__dirname, '../../public/problems', problemId)
+
   try {
     // description.txt の読み込み
-    const descriptionPath = path.join(problemDir, 'description.txt');
-    const descriptionContent = fs.readFileSync(descriptionPath, 'utf-8');
-    
+    const descriptionPath = path.join(problemDir, 'description.txt')
+    const descriptionContent = fs.readFileSync(descriptionPath, 'utf-8')
+
     // SGFファイルの読み込み
-    const sgfPath = path.join(problemDir, 'kifu.sgf');
-    const sgfContent = fs.readFileSync(sgfPath, 'utf-8');
-    
+    const sgfPath = path.join(problemDir, 'kifu.sgf')
+    const sgfContent = fs.readFileSync(sgfPath, 'utf-8')
+
     // description.txt のパース
-    const problemData = parseDescriptionFile(descriptionContent);
-    
+    const problemData = parseDescriptionFile(descriptionContent)
+
     return {
       ...problemData,
-      sgfContent
-    };
+      sgfContent,
+    }
   } catch (error) {
-    console.error(`Failed to load problem ${problemId}:`, error);
-    return null;
+    console.error(`Failed to load problem ${problemId}:`, error)
+    return null
   }
 }
 
 function parseDescriptionFile(content: string): Omit<ProblemData, 'sgfContent'> {
-  const lines = content.trim().split('\n');
-  const data: any = {};
-  
-  lines.forEach(line => {
-    const [key, ...valueParts] = line.split(':');
+  const lines = content.trim().split('\n')
+  const data: any = {}
+
+  lines.forEach((line) => {
+    const [key, ...valueParts] = line.split(':')
     if (key && valueParts.length > 0) {
-      data[key.trim()] = valueParts.join(':').trim();
+      data[key.trim()] = valueParts.join(':').trim()
     }
-  });
-  
+  })
+
   // 必須項目のチェック
   if (!data.id || !data.turn || !data.created || !data.description) {
-    throw new Error('必須項目が不足しています: id, turn, created, description');
+    throw new Error('必須項目が不足しています: id, turn, created, description')
   }
-  
+
   return {
     id: parseInt(data.id),
     turn: data.turn,
     createdDate: data.created,
     description: data.description,
-    moves: data.moves ? parseInt(data.moves) : undefined
-  };
+    moves: data.moves ? parseInt(data.moves) : undefined,
+  }
 }
 
 // 全問題の一覧を取得
 export function getAllProblems(): ProblemData[] {
-  const problemsDir = path.join(__dirname, '../../public/problems');
-  
+  const problemsDir = path.join(__dirname, '../../public/problems')
+
   try {
-    const problemDirs = fs.readdirSync(problemsDir, { withFileTypes: true })
-      .filter(dirent => dirent.isDirectory())
-      .map(dirent => dirent.name);
-    
-    const problems: ProblemData[] = [];
-    
-    problemDirs.forEach(dirName => {
-      const problemData = loadProblemFromDirectory(dirName);
+    const problemDirs = fs
+      .readdirSync(problemsDir, { withFileTypes: true })
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name)
+
+    const problems: ProblemData[] = []
+
+    problemDirs.forEach((dirName) => {
+      const problemData = loadProblemFromDirectory(dirName)
       if (problemData) {
-        problems.push(problemData);
+        problems.push(problemData)
       }
-    });
-    
+    })
+
     // 作成日時順でソート（新しい順）
-    return problems.sort((a, b) => 
-      new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
-    );
+    return problems.sort(
+      (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime(),
+    )
   } catch (error) {
-    console.error('Failed to load problems:', error);
-    return [];
+    console.error('Failed to load problems:', error)
+    return []
   }
 }
 ```
@@ -1039,6 +1062,7 @@ export function getAllProblems(): ProblemData[] {
 新しい問題が `public/problems/` ディレクトリに追加された際に、トップページの問題一覧にリアルタイムで反映される機能を実装する。
 
 **技術構成:**
+
 - Node.js `chokidar` ライブラリでファイルシステム監視
 - Socket.io でWebSocket通信
 - クライアントサイドでリアルタイム更新
@@ -1047,20 +1071,20 @@ export function getAllProblems(): ProblemData[] {
 
 ```typescript
 // server/utils/file-watcher.ts
-import chokidar from 'chokidar';
-import { Server as SocketIOServer } from 'socket.io';
-import path from 'path';
-import { loadProblemFromDirectory, getAllProblems } from './problem-loader';
+import chokidar from 'chokidar'
+import { Server as SocketIOServer } from 'socket.io'
+import path from 'path'
+import { loadProblemFromDirectory, getAllProblems } from './problem-loader'
 
 export class ProblemWatcher {
-  private io: SocketIOServer;
-  private watcher: chokidar.FSWatcher;
-  private problemsDir: string;
+  private io: SocketIOServer
+  private watcher: chokidar.FSWatcher
+  private problemsDir: string
 
   constructor(io: SocketIOServer) {
-    this.io = io;
-    this.problemsDir = path.join(__dirname, '../../public/problems');
-    this.initializeWatcher();
+    this.io = io
+    this.problemsDir = path.join(__dirname, '../../public/problems')
+    this.initializeWatcher()
   }
 
   private initializeWatcher() {
@@ -1068,84 +1092,84 @@ export class ProblemWatcher {
     this.watcher = chokidar.watch(this.problemsDir, {
       ignored: /node_modules/,
       persistent: true,
-      depth: 2 // 問題ディレクトリ内のファイルまで監視
-    });
+      depth: 2, // 問題ディレクトリ内のファイルまで監視
+    })
 
     // 新しいディレクトリが追加された場合
     this.watcher.on('addDir', (dirPath) => {
       if (this.isProblemDirectory(dirPath)) {
-        this.handleNewProblem(dirPath);
+        this.handleNewProblem(dirPath)
       }
-    });
+    })
 
     // ファイルが追加された場合（description.txt や kifu.sgf）
     this.watcher.on('add', (filePath) => {
       if (this.isRelevantFile(filePath)) {
-        const problemDir = path.dirname(filePath);
-        this.handleProblemUpdate(problemDir);
+        const problemDir = path.dirname(filePath)
+        this.handleProblemUpdate(problemDir)
       }
-    });
+    })
 
     // ファイルが変更された場合
     this.watcher.on('change', (filePath) => {
       if (this.isRelevantFile(filePath)) {
-        const problemDir = path.dirname(filePath);
-        this.handleProblemUpdate(problemDir);
+        const problemDir = path.dirname(filePath)
+        this.handleProblemUpdate(problemDir)
       }
-    });
+    })
 
-    console.log('File watcher initialized for problems directory');
+    console.log('File watcher initialized for problems directory')
   }
 
   private isProblemDirectory(dirPath: string): boolean {
-    const relativePath = path.relative(this.problemsDir, dirPath);
+    const relativePath = path.relative(this.problemsDir, dirPath)
     // problems ディレクトリ直下のディレクトリかつ、数字のディレクトリ名
-    return relativePath.split(path.sep).length === 1 && /^\d+$/.test(path.basename(dirPath));
+    return relativePath.split(path.sep).length === 1 && /^\d+$/.test(path.basename(dirPath))
   }
 
   private isRelevantFile(filePath: string): boolean {
-    const fileName = path.basename(filePath);
-    return fileName === 'description.txt' || fileName === 'kifu.sgf';
+    const fileName = path.basename(filePath)
+    return fileName === 'description.txt' || fileName === 'kifu.sgf'
   }
 
   private async handleNewProblem(dirPath: string) {
-    const problemId = path.basename(dirPath);
-    console.log(`New problem detected: ${problemId}`);
-    
+    const problemId = path.basename(dirPath)
+    console.log(`New problem detected: ${problemId}`)
+
     // 少し待ってからファイルを読み込み（ファイルコピーが完了するまで）
     setTimeout(() => {
-      this.handleProblemUpdate(dirPath);
-    }, 1000);
+      this.handleProblemUpdate(dirPath)
+    }, 1000)
   }
 
   private async handleProblemUpdate(dirPath: string) {
-    const problemId = path.basename(dirPath);
-    
+    const problemId = path.basename(dirPath)
+
     try {
       // 問題データを読み込み
-      const problemData = loadProblemFromDirectory(problemId);
-      
+      const problemData = loadProblemFromDirectory(problemId)
+
       if (problemData) {
-        console.log(`Problem updated: ${problemId}`);
-        
+        console.log(`Problem updated: ${problemId}`)
+
         // 全クライアントに更新を通知
         this.io.emit('problemUpdated', {
           type: 'update',
-          problem: problemData
-        });
-        
+          problem: problemData,
+        })
+
         // 問題一覧全体も送信（新規追加の場合）
-        const allProblems = getAllProblems();
-        this.io.emit('problemsListUpdated', allProblems);
+        const allProblems = getAllProblems()
+        this.io.emit('problemsListUpdated', allProblems)
       }
     } catch (error) {
-      console.error(`Error loading problem ${problemId}:`, error);
+      console.error(`Error loading problem ${problemId}:`, error)
     }
   }
 
   public destroy() {
     if (this.watcher) {
-      this.watcher.close();
+      this.watcher.close()
     }
   }
 }
@@ -1155,152 +1179,152 @@ export class ProblemWatcher {
 
 ```typescript
 // server/index.ts（リアルタイム更新対応版）
-import express from 'express';
-import { createServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
-import cors from 'cors';
-import path from 'path';
-import apiRoutes from './routes/api';
-import { ProblemWatcher } from './utils/file-watcher';
-import { getAllProblems } from './utils/problem-loader';
+import express from 'express'
+import { createServer } from 'http'
+import { Server as SocketIOServer } from 'socket.io'
+import cors from 'cors'
+import path from 'path'
+import apiRoutes from './routes/api'
+import { ProblemWatcher } from './utils/file-watcher'
+import { getAllProblems } from './utils/problem-loader'
 
-const app = express();
-const server = createServer(app);
+const app = express()
+const server = createServer(app)
 const io = new SocketIOServer(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+})
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000
 
 // ミドルウェア
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors())
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
 // 静的ファイル配信
-app.use(express.static(path.join(__dirname, '../public/dist')));
-app.use('/wgo', express.static(path.join(__dirname, '../public/wgo'))); // WGo.js配信
-app.use('/problems', express.static(path.join(__dirname, '../public/problems')));
-app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')));
+app.use(express.static(path.join(__dirname, '../public/dist')))
+app.use('/wgo', express.static(path.join(__dirname, '../public/wgo'))) // WGo.js配信
+app.use('/problems', express.static(path.join(__dirname, '../public/problems')))
+app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')))
 
 // API ルート
-app.use('/api', apiRoutes);
+app.use('/api', apiRoutes)
 
 // WebSocket接続処理
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
-  
+  console.log('Client connected:', socket.id)
+
   // 接続時に現在の問題一覧を送信
-  socket.emit('initialProblems', getAllProblems());
-  
+  socket.emit('initialProblems', getAllProblems())
+
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
-  });
-});
+    console.log('Client disconnected:', socket.id)
+  })
+})
 
 // ファイル監視を開始
-const problemWatcher = new ProblemWatcher(io);
+const problemWatcher = new ProblemWatcher(io)
 
 // SPA用のフォールバック
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/dist/index.html'));
-});
+  res.sendFile(path.join(__dirname, '../public/dist/index.html'))
+})
 
 // サーバー終了時のクリーンアップ
 process.on('SIGTERM', () => {
-  problemWatcher.destroy();
-  server.close();
-});
+  problemWatcher.destroy()
+  server.close()
+})
 
 server.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+  console.log(`Server running on port ${port}`)
+})
 ```
 
 **クライアントサイド実装:**
 
 ```typescript
 // client/src/hooks/useRealTimeProblems.ts
-import { useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useEffect, useState } from 'react'
+import { io, Socket } from 'socket.io-client'
 
 interface Problem {
-  id: number;
-  description: string;
-  turn: string;
-  createdDate: string;
-  answerCount?: number;
+  id: number
+  description: string
+  turn: string
+  createdDate: string
+  answerCount?: number
 }
 
 export function useRealTimeProblems() {
-  const [problems, setProblems] = useState<Problem[]>([]);
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [problems, setProblems] = useState<Problem[]>([])
+  const [socket, setSocket] = useState<Socket | null>(null)
+  const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
     // Socket.io接続
-    const newSocket = io();
-    setSocket(newSocket);
+    const newSocket = io()
+    setSocket(newSocket)
 
     // 接続状態の管理
     newSocket.on('connect', () => {
-      console.log('Connected to server');
-      setIsConnected(true);
-    });
+      console.log('Connected to server')
+      setIsConnected(true)
+    })
 
     newSocket.on('disconnect', () => {
-      console.log('Disconnected from server');
-      setIsConnected(false);
-    });
+      console.log('Disconnected from server')
+      setIsConnected(false)
+    })
 
     // 初期問題一覧受信
     newSocket.on('initialProblems', (initialProblems: Problem[]) => {
-      console.log('Received initial problems:', initialProblems);
-      setProblems(initialProblems);
-    });
+      console.log('Received initial problems:', initialProblems)
+      setProblems(initialProblems)
+    })
 
     // 問題一覧更新受信
     newSocket.on('problemsListUpdated', (updatedProblems: Problem[]) => {
-      console.log('Problems list updated:', updatedProblems);
-      setProblems(updatedProblems);
-    });
+      console.log('Problems list updated:', updatedProblems)
+      setProblems(updatedProblems)
+    })
 
     // 個別問題更新受信
     newSocket.on('problemUpdated', (data: { type: string; problem: Problem }) => {
-      console.log('Problem updated:', data);
-      
+      console.log('Problem updated:', data)
+
       if (data.type === 'update') {
-        setProblems(prev => {
-          const existingIndex = prev.findIndex(p => p.id === data.problem.id);
+        setProblems((prev) => {
+          const existingIndex = prev.findIndex((p) => p.id === data.problem.id)
           if (existingIndex >= 0) {
             // 既存問題の更新
-            const updated = [...prev];
-            updated[existingIndex] = data.problem;
-            return updated;
+            const updated = [...prev]
+            updated[existingIndex] = data.problem
+            return updated
           } else {
             // 新規問題の追加
-            return [data.problem, ...prev].sort((a, b) => 
-              new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime()
-            );
+            return [data.problem, ...prev].sort(
+              (a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime(),
+            )
           }
-        });
+        })
       }
-    });
+    })
 
     // クリーンアップ
     return () => {
-      newSocket.close();
-    };
-  }, []);
+      newSocket.close()
+    }
+  }, [])
 
   return {
     problems,
     isConnected,
-    socket
-  };
+    socket,
+  }
 }
 ```
 
@@ -1326,7 +1350,7 @@ export function Home() {
           )}
         </div>
       </header>
-      
+
       <main>
         <div className="problems-list">
           {problems.length === 0 ? (
@@ -1360,55 +1384,55 @@ export function Home() {
 
 ```typescript
 // server/routes/api.ts に追加
-import { loadProblemFromDirectory, getAllProblems } from '../utils/problem-loader';
+import { loadProblemFromDirectory, getAllProblems } from '../utils/problem-loader'
 
 // SGFファイル取得
 router.get('/sgf/:problemId', (req, res) => {
   try {
-    const problemId = req.params.problemId;
-    const problemData = loadProblemFromDirectory(problemId);
-    
+    const problemId = req.params.problemId
+    const problemData = loadProblemFromDirectory(problemId)
+
     if (!problemData) {
-      return res.status(404).json({ error: 'Problem not found' });
+      return res.status(404).json({ error: 'Problem not found' })
     }
-    
-    res.setHeader('Content-Type', 'application/x-go-sgf');
-    res.send(problemData.sgfContent);
+
+    res.setHeader('Content-Type', 'application/x-go-sgf')
+    res.send(problemData.sgfContent)
   } catch (error) {
-    console.error('Error getting SGF:', error);
-    res.status(500).json({ error: 'Failed to get SGF' });
+    console.error('Error getting SGF:', error)
+    res.status(500).json({ error: 'Failed to get SGF' })
   }
-});
+})
 
 // 問題一覧取得（ファイルベース + データベース統合）
 router.get('/problems', async (req, res) => {
   try {
     // ファイルシステムから問題一覧を取得
-    const fileProblems = getAllProblems();
-    
+    const fileProblems = getAllProblems()
+
     // データベースの回答数も含めて返す
     const problemsWithCounts = await Promise.all(
       fileProblems.map(async (problem) => {
         const answerCount = await prisma.answer.count({
           where: {
             problemId: problem.id,
-            isDeleted: false
-          }
-        });
-        
+            isDeleted: false,
+          },
+        })
+
         return {
           ...problem,
-          answerCount
-        };
-      })
-    );
-    
-    res.json(problemsWithCounts);
+          answerCount,
+        }
+      }),
+    )
+
+    res.json(problemsWithCounts)
   } catch (error) {
-    console.error('Error getting problems:', error);
-    res.status(500).json({ error: 'Failed to get problems' });
+    console.error('Error getting problems:', error)
+    res.status(500).json({ error: 'Failed to get problems' })
   }
-});
+})
 ```
 
 ### 8.13. 依存関係の更新（リアルタイム機能追加）
@@ -1418,7 +1442,7 @@ router.get('/problems', async (req, res) => {
   "dependencies": {
     // ...existing dependencies...
     "socket.io": "^4.7.0",
-    "socket.io-client": "^4.7.0", 
+    "socket.io-client": "^4.7.0",
     "chokidar": "^3.5.0"
   },
   "devDependencies": {
@@ -1431,22 +1455,26 @@ router.get('/problems', async (req, res) => {
 ### 8.14. 運用上の注意点
 
 **リアルタイム更新機能:**
+
 - `public/problems/` ディレクトリに新しい問題を配置すると自動でトップページに反映
 - ファイルコピー中の誤検知を避けるため、1秒の遅延処理を実装
 - WebSocketが利用できない環境では、ポーリング方式への切り替えも可能
 
 **問題配置手順:**
+
 1. `public/problems/{問題番号}/` ディレクトリを作成（ID重複チェック実施）
 2. `kifu.sgf` と `description.txt`（UTF-8）を配置
 3. 自動的にOGP画像が生成される（1200x630px）
 4. 自動的にトップページに反映される
 
 **エラーハンドリング:**
+
 - SGFファイルが不正な場合はエラーログを出力し、その問題はスキップ
 - description.txtの必須項目が欠けている場合もエラーログを出力
 - ネットワークエラー時の再試行処理は実装しない
 
 **デプロイ方法:**
+
 - Gitでクローンして展開
 - PM2/foreverなどのプロセスマネージャーは使用しない
 - 単純な`node server/index.js`で起動
@@ -1465,8 +1493,9 @@ WGo.jsは囲碁のWebアプリケーションを簡単に作成するためのJa
 ```
 
 公式のBasic HTML構成例:
+
 ```html
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
   <head>
     <title>My page</title>
@@ -1486,11 +1515,12 @@ WGo.BasicPlayerを使用したSGFファイルの表示：
 
 ```javascript
 var player = new WGo.BasicPlayer(element, {
-    sgfFile: "game.sgf"
-});
+  sgfFile: 'game.sgf',
+})
 ```
 
 **標準マーカーの種類と使用方法:**
+
 - **"LB"**: ラベル（任意の文字列を表示）
 - **"TR"**: 三角形マーカー
 - **"SQ"**: 四角形マーカー
@@ -1515,6 +1545,7 @@ var player = new WGo.BasicPlayer(element, {
    - 例：`{x:3, y:3, type: voteMarker, text: "12"}`
 
 **2. いごもん用ファイル配置:**
+
 ```
 public/wgo/
 ├── wgo.min.js                    // メインライブラリ（必須）
@@ -1532,9 +1563,10 @@ public/wgo/
 ```
 
 **3. HTMLでの読み込み（公式推奨方式）:**
+
 ```html
 <!-- client/public/index.html -->
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
   <head>
     <title>いごもん - 囲碁アンケートサイト</title>
@@ -1568,32 +1600,33 @@ public/wgo/
 - **WGo.Position** - 盤面状態の保存・復元
 
 **5. 基本的なBoard初期化（公式チュートリアル準拠）:**
+
 ```javascript
 // 公式チュートリアルの基本例
-var board = new WGo.Board(document.getElementById("board"), {
-    width: 600,
-});
+var board = new WGo.Board(document.getElementById('board'), {
+  width: 600,
+})
 
 // セクション表示（盤面の一部のみ表示）
-var board = new WGo.Board(document.getElementById("board"), {
-    width: 600,
-    section: {
-        top: 12,
-        left: 6, 
-        right: 0,
-        bottom: 0
-    }
-});
+var board = new WGo.Board(document.getElementById('board'), {
+  width: 600,
+  section: {
+    top: 12,
+    left: 6,
+    right: 0,
+    bottom: 0,
+  },
+})
 
 // マウスイベント処理
-board.addEventListener("click", function(x, y) {
-    // 黒石を配置
-    board.addObject({
-        x: x,
-        y: y,
-        c: WGo.B
-    });
-});
+board.addEventListener('click', function (x, y) {
+  // 黒石を配置
+  board.addObject({
+    x: x,
+    y: y,
+    c: WGo.B,
+  })
+})
 ```
 
 **6. いごもん用GoBoard.tsxの実装例（公式API準拠）:**
@@ -1617,12 +1650,12 @@ declare global {
   }
 }
 
-export default function GoBoard({ 
-  sgfContent, 
-  onCoordinateSelect, 
+export default function GoBoard({
+  sgfContent,
+  onCoordinateSelect,
   showClickable = false,
   resultsData,
-  maxMoves 
+  maxMoves
 }: GoBoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const [board, setBoard] = useState<any>(null);
@@ -1659,7 +1692,7 @@ export default function GoBoard({
           background: window.WGo.DIR + "wood1.jpg", // 公式デフォルト背景
           section: {                  // セクション表示（公式仕様）
             top: 0,
-            left: 0, 
+            left: 0,
             right: 0,
             bottom: 0
           }
@@ -1671,7 +1704,7 @@ export default function GoBoard({
           // SGF処理（WGo.Gameクラス使用）
           const game = new window.WGo.Game();
           loadSgfToGame(game, sgfContent, maxMoves);
-          
+
           // 現在のポジションを盤面に反映
           const position = game.getPosition();
           updateBoardPosition(newBoard, position);
@@ -1682,7 +1715,7 @@ export default function GoBoard({
               // 公式座標システム（相対座標）
               const coordinate = wgoToSgfCoords(x, y);
               onCoordinateSelect(coordinate);
-              
+
               // 視覚的フィードバック（公式addObject）
               newBoard.removeObjectsAt(x, y); // 既存マーカー削除
               newBoard.addObject({
@@ -1720,10 +1753,10 @@ export default function GoBoard({
     try {
       // 簡易SGFパーサー（公式の詳細パーサーがあれば使用推奨）
       const moves = parseSgfMoves(sgfContent);
-      
+
       moves.forEach((move, index) => {
         if (maxMoves !== undefined && index >= maxMoves) return;
-        
+
         if (move.color && move.x !== undefined && move.y !== undefined) {
           // 公式play()メソッド使用
           const result = game.play(move.x, move.y, move.color);
@@ -1740,7 +1773,7 @@ export default function GoBoard({
   // ポジションを盤面に反映（公式Position API使用）
   const updateBoardPosition = (boardInstance: any, position: any) => {
     boardInstance.removeAllObjects(); // 既存オブジェクト削除
-    
+
     for (let x = 0; x < position.size; x++) {
       for (let y = 0; y < position.size; y++) {
         const stone = position.get(x, y);
@@ -1760,11 +1793,11 @@ export default function GoBoard({
   const displayResults = (boardInstance: any, results: Record<string, { votes: number; answers: any[] }>) => {
     Object.entries(results).forEach(([coordinate, data]) => {
       const coords = sgfToWgoCoords(coordinate);
-      
+
       if (coords.x >= 0 && coords.x < 19 && coords.y >= 0 && coords.y < 19) {
         // 得票数に応じた色分け
         const color = getColorByVotes(data.votes);
-        
+
         // 公式LBマーカー（ラベル）使用
         boardInstance.addObject({
           x: coords.x,
@@ -1790,13 +1823,13 @@ export default function GoBoard({
     const moves: Array<{color: number, x: number, y: number}> = [];
     const blackMoves = sgfContent.match(/;B\[([a-s][a-s])\]/g) || [];
     const whiteMoves = sgfContent.match(/;W\[([a-s][a-s])\]/g) || [];
-    
+
     // 手順順に並び替え（簡易版）
     const allMoves = [
       ...blackMoves.map(m => ({ move: m, color: window.WGo.B })),
       ...whiteMoves.map(m => ({ move: m, color: window.WGo.W }))
     ];
-    
+
     allMoves.forEach(({move, color}) => {
       const coords = move.match(/\[([a-s])([a-s])\]/);
       if (coords) {
@@ -1805,22 +1838,22 @@ export default function GoBoard({
         moves.push({ color, x, y });
       }
     });
-    
+
     return moves;
   };
 
   // 座標変換（公式座標システム準拠）
   const sgfToWgoCoords = (sgfCoord: string): { x: number; y: number } => {
     if (!sgfCoord || sgfCoord.length !== 2) return { x: -1, y: -1 };
-    
+
     const x = sgfCoord.charCodeAt(0) - 'a'.charCodeAt(0); // a=0, b=1, ...
     const y = sgfCoord.charCodeAt(1) - 'a'.charCodeAt(0);
-    
+
     return { x, y };
   };
 
   const wgoToSgfCoords = (x: number, y: number): string => {
-    return String.fromCharCode('a'.charCodeAt(0) + x) + 
+    return String.fromCharCode('a'.charCodeAt(0) + x) +
            String.fromCharCode('a'.charCodeAt(0) + y);
   };
 
@@ -1843,14 +1876,14 @@ export default function GoBoard({
   // SGF座標を標準囲碁記法（A1〜T19）に変換
   const sgfToDisplayCoordinate = (sgfCoord: string): string => {
     if (!sgfCoord || sgfCoord.length !== 2) return '';
-    
+
     const x = sgfCoord.charCodeAt(0) - 'a'.charCodeAt(0);
     const y = sgfCoord.charCodeAt(1) - 'a'.charCodeAt(0);
-    
+
     const letters = 'ABCDEFGHJKLMNOPQRST'; // I除く
     const letter = letters[x];
     const number = 19 - y; // SGFは上から下、表示は下から上
-    
+
     return `${letter}${number}`;
   };
 
@@ -1864,11 +1897,11 @@ export default function GoBoard({
 
   return (
     <div className="go-board-container">
-      <div 
-        ref={boardRef} 
+      <div
+        ref={boardRef}
         className="go-board"
-        style={{ 
-          width: '500px', 
+        style={{
+          width: '500px',
           height: '500px',
           border: '2px solid #8B4513',
           borderRadius: '8px'
@@ -1893,7 +1926,7 @@ export default function GoBoard({
 
 ```typescript
 // アンケート回答ページ
-<GoBoard 
+<GoBoard
   sgfContent={problemData.sgfContent}
   maxMoves={problemData.moves} // movesパラメータ対応
   onCoordinateSelect={(coordinate) => {
@@ -1903,7 +1936,7 @@ export default function GoBoard({
 />
 
 // 結果表示ページ
-<GoBoard 
+<GoBoard
   sgfContent={problemData.sgfContent}
   maxMoves={problemData.moves}
   resultsData={resultsData}
@@ -1915,21 +1948,21 @@ export default function GoBoard({
 
 ```typescript
 // server/index.ts
-import express from 'express';
-import path from 'path';
+import express from 'express'
+import path from 'path'
 
-const app = express();
+const app = express()
 
 // WGo.js静的ファイル配信（公式推奨）
-app.use('/wgo', express.static(path.join(__dirname, '../public/wgo')));
-app.use(express.static(path.join(__dirname, '../public/dist')));
-app.use('/problems', express.static(path.join(__dirname, '../public/problems')));
-app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')));
+app.use('/wgo', express.static(path.join(__dirname, '../public/wgo')))
+app.use(express.static(path.join(__dirname, '../public/dist')))
+app.use('/problems', express.static(path.join(__dirname, '../public/problems')))
+app.use('/ogp', express.static(path.join(__dirname, '../public/ogp')))
 
 // WGo.DIRが正しく設定されるように
 app.get('/wgo/wgo.min.js', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/wgo/wgo.min.js'));
-});
+  res.sendFile(path.join(__dirname, '../public/wgo/wgo.min.js'))
+})
 ```
 
 **9. 公式API要点まとめ:**

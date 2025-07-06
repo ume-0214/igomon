@@ -18,13 +18,6 @@
     "sourceMap": true,
     "types": ["node"]
   },
-  "include": [
-    "server/**/*",
-    "lib/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "client"
-  ]
+  "include": ["server/**/*", "lib/**/*"],
+  "exclude": ["node_modules", "dist", "client"]
 }

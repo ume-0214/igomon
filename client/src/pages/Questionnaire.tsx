@@ -1,89 +1,89 @@
 // client/src/pages/Questionnaire.tsx
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import GoBoard from '../components/GoBoard';
-import { AnswerForm } from '../components/AnswerForm';
-import { getProblem, submitAnswer, hasUserAnswered } from '../utils/api';
-import { getUserUuid } from '../utils/uuid';
+import React, { useEffect, useState } from 'react'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+import GoBoard from '../components/GoBoard'
+import { AnswerForm } from '../components/AnswerForm'
+import { getProblem, submitAnswer, hasUserAnswered } from '../utils/api'
+import { getUserUuid } from '../utils/uuid'
 
 export function Questionnaire() {
-  const { problemId } = useParams<{ problemId: string }>();
-  const navigate = useNavigate();
-  const [problem, setProblem] = useState<any>(null);
-  const [selectedCoordinate, setSelectedCoordinate] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { problemId } = useParams<{ problemId: string }>()
+  const navigate = useNavigate()
+  const [problem, setProblem] = useState<any>(null)
+  const [selectedCoordinate, setSelectedCoordinate] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (!problemId) return;
-    
+    if (!problemId) return
+
     // 回答済みかチェック
-    checkIfAnswered();
-  }, [problemId]);
+    checkIfAnswered()
+  }, [problemId])
 
   const checkIfAnswered = async () => {
     try {
-      const answered = await hasUserAnswered(parseInt(problemId!));
+      const answered = await hasUserAnswered(parseInt(problemId!))
       if (answered) {
         // 回答済みの場合は結果ページへ遷移
-        navigate(`/results/${problemId}`, { replace: true });
-        return;
+        navigate(`/results/${problemId}`, { replace: true })
+        return
       }
       // 未回答の場合は問題を読み込む
-      loadProblem();
+      loadProblem()
     } catch (err) {
-      console.error('回答状態のチェックに失敗しました:', err);
+      console.error('回答状態のチェックに失敗しました:', err)
       // エラーが発生しても問題の読み込みは行う
-      loadProblem();
+      loadProblem()
     }
-  };
+  }
 
   const loadProblem = async () => {
     try {
-      setLoading(true);
-      const problemData = await getProblem(problemId!);
-      setProblem(problemData);
+      setLoading(true)
+      const problemData = await getProblem(problemId!)
+      setProblem(problemData)
     } catch (err) {
-      setError('問題の読み込みに失敗しました');
-      console.error(err);
+      setError('問題の読み込みに失敗しました')
+      console.error(err)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSubmit = async (formData: {
-    coordinate: string;
-    reason: string;
-    playerName: string;
-    playerRank: string;
+    coordinate: string
+    reason: string
+    playerName: string
+    playerRank: string
   }) => {
-    if (!problemId || !problem) return;
-    
+    if (!problemId || !problem) return
+
     try {
-      setIsSubmitting(true);
+      setIsSubmitting(true)
       const result = await submitAnswer({
         problemId: problem.id,
-        ...formData
-      });
-      
+        ...formData,
+      })
+
       // 回答済みの場合でも結果ページへ遷移
-      navigate(`/results/${problemId}`);
+      navigate(`/results/${problemId}`)
     } catch (err: any) {
       // サーバーから返されたエラーメッセージを表示
       if (err.message) {
-        setError(err.message);
+        setError(err.message)
       } else {
-        setError('回答の送信に失敗しました');
+        setError('回答の送信に失敗しました')
       }
-      console.error('Submit error:', err);
+      console.error('Submit error:', err)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   if (loading) {
-    return <div className="loading">読み込み中...</div>;
+    return <div className="loading">読み込み中...</div>
   }
 
   if (error) {
@@ -93,11 +93,11 @@ export function Questionnaire() {
         <p>{error}</p>
         <button onClick={() => navigate('/')}>トップへ戻る</button>
       </div>
-    );
+    )
   }
 
   if (!problem) {
-    return <div className="error-page">問題が見つかりません</div>;
+    return <div className="error-page">問題が見つかりません</div>
   }
 
   return (
@@ -109,9 +109,9 @@ export function Questionnaire() {
             <span className="turn-info">{problem.turn === 'black' ? '黒番' : '白番'}</span>
           </div>
         </div>
-        
+
         <p className="problem-description">{problem.description}</p>
-        
+
         <div className="questionnaire-content">
           <div className="board-wrapper">
             <GoBoard
@@ -121,17 +121,26 @@ export function Questionnaire() {
               showClickable={true}
             />
           </div>
-          
+
           <div className="form-wrapper">
-            <AnswerForm
-              selectedCoordinate={selectedCoordinate}
-              onSubmit={handleSubmit}
-            />
+            <AnswerForm selectedCoordinate={selectedCoordinate} onSubmit={handleSubmit} />
             {isSubmitting && <p className="submitting">送信中...</p>}
             <div className="back-to-top">
               <Link to="/">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M11 12L7 8L11 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M11 12L7 8L11 4"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
                 <span>トップへ戻る</span>
               </Link>
@@ -140,5 +149,5 @@ export function Questionnaire() {
         </div>
       </div>
     </div>
-  );
+  )
 }

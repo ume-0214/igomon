@@ -40,19 +40,19 @@ WGo.jsでは碁盤上の各交点に対してオブジェクト（石やマー�
 
 ```javascript
 // WGo.Boardオブジェクトの初期化（19路盤、幅600pxの例）
-var board = new WGo.Board(document.getElementById("board"), { 
-    width: 600    // 盤面の幅を指定
-});
+var board = new WGo.Board(document.getElementById('board'), {
+  width: 600, // 盤面の幅を指定
+})
 ```
 
 ### 2.3 石の配置
 
 ```javascript
 // 黒石を(3,3)に配置
-board.addObject({ x: 3, y: 3, c: WGo.B });
+board.addObject({ x: 3, y: 3, c: WGo.B })
 
 // 白石を(4,4)に配置
-board.addObject({ x: 4, y: 4, c: WGo.W });
+board.addObject({ x: 4, y: 4, c: WGo.W })
 ```
 
 ---
@@ -65,8 +65,8 @@ WGo.jsにはSGF棋譜を簡単に表示するためのプレイヤー機能が�
 
 ```javascript
 var player = new WGo.BasicPlayer(element, {
-    sgfFile: "game.sgf"    // SGFファイルまたはSGF文字列を指定
-});
+  sgfFile: 'game.sgf', // SGFファイルまたはSGF文字列を指定
+})
 ```
 
 上記のようにSGFファイル（またはSGF文字列）を指定することで、碁盤上に対局の再現が行われます。
@@ -85,7 +85,7 @@ WGo.BasicPlayerはデフォルトで以下のUIコンポーネントを持ち、
 
 ```javascript
 // BasicPlayer経由で盤を操作
-player.board.addObject({ x: 3, y: 3, type: "LB", text: "A" });
+player.board.addObject({ x: 3, y: 3, type: 'LB', text: 'A' })
 ```
 
 BasicPlayer経由で盤を操作している場合は、`player.board.addObject()`を使って上記と同じようにオブジェクトを追加できます（[参考: github.com](https://github.com)）。
@@ -115,13 +115,13 @@ WGo.jsにはデフォルトでいくつかのマーカー描画ハンドラが�
 
 ```javascript
 // 基本的なラベル表示
-board.addObject({ x: 3, y: 3, type: "LB", text: "A" });
+board.addObject({ x: 3, y: 3, type: 'LB', text: 'A' })
 
 // 石の上にラベルを重ねる
 board.addObject([
-    {x: 3, y: 3, c: WGo.B},               // 黒石を配置
-    {x: 3, y: 3, type: "LB", text: "A"}   // 同じ座標にラベル "A" を重ねる
-]);
+  { x: 3, y: 3, c: WGo.B }, // 黒石を配置
+  { x: 3, y: 3, type: 'LB', text: 'A' }, // 同じ座標にラベル "A" を重ねる
+])
 ```
 
 上記のように配列で2つのオブジェクト（石とラベル）を渡すことで、石の上にラベルが重ねて描画されます（[参考: wgo.waltheri.net](https://wgo.waltheri.net)）。
@@ -132,13 +132,13 @@ board.addObject([
 
 ```javascript
 // 三角形マーカー
-board.addObject({ x: 4, y: 4, type: "TR" });
+board.addObject({ x: 4, y: 4, type: 'TR' })
 
 // 四角形マーカー
-board.addObject({ x: 5, y: 5, type: "SQ" });
+board.addObject({ x: 5, y: 5, type: 'SQ' })
 
 // 丸印マーカー
-board.addObject({ x: 6, y: 6, type: "CR" });
+board.addObject({ x: 6, y: 6, type: 'CR' })
 ```
 
 ---
@@ -158,16 +158,16 @@ board.addObject({ x: 6, y: 6, type: "CR" });
 ```javascript
 // 投票結果データの例
 var votes = [
-    { x: 3,  y: 4,  votes: 12 },   // 例: (D,16)の交点に12票
-    { x: 10, y: 10, votes: 5  },   // 例: (K,9) の交点に5票
-    { x: 15, y: 16, votes: 8  }    // 例: (P,4) の交点に8票
-];
+  { x: 3, y: 4, votes: 12 }, // 例: (D,16)の交点に12票
+  { x: 10, y: 10, votes: 5 }, // 例: (K,9) の交点に5票
+  { x: 15, y: 16, votes: 8 }, // 例: (P,4) の交点に8票
+]
 
 // 各投票データに対して石とラベルを配置
-votes.forEach(v => {
-    board.addObject({ x: v.x, y: v.y, c: WGo.B });                        // 黒石を配置
-    board.addObject({ x: v.x, y: v.y, type: "LB", text: String(v.votes) }); // 票数ラベルを配置
-});
+votes.forEach((v) => {
+  board.addObject({ x: v.x, y: v.y, c: WGo.B }) // 黒石を配置
+  board.addObject({ x: v.x, y: v.y, type: 'LB', text: String(v.votes) }) // 票数ラベルを配置
+})
 ```
 
 ### 5.3 常時表示の特徴
@@ -195,20 +195,20 @@ votes.forEach(v => {
 
 <script>
   // 1. WGo.Boardオブジェクトの初期化（19路盤、幅600pxの例）
-  var board = new WGo.Board(document.getElementById("board"), { width: 600 });
-  
+  var board = new WGo.Board(document.getElementById('board'), { width: 600 })
+
   // 2. 投票結果データの用意（例として x,y 座標と票数votesの配列）
   var votes = [
-    { x: 3,  y: 4,  votes: 12 },   // 例: (D,16)の交点に12票
-    { x: 10, y: 10, votes: 5  },   // 例: (K,9) の交点に5票
+    { x: 3, y: 4, votes: 12 }, // 例: (D,16)の交点に12票
+    { x: 10, y: 10, votes: 5 }, // 例: (K,9) の交点に5票
     // ... 他のデータ
-  ];
-  
+  ]
+
   // 3. 各データに対して石とラベルを盤上に追加
-  votes.forEach(v => {
-    board.addObject({ x: v.x, y: v.y, c: WGo.B });                   // 黒石を配置 (必要に応じ白なら WGo.W)
-    board.addObject({ x: v.x, y: v.y, type: "LB", text: String(v.votes) });  // 石と同座標に票数ラベルを配置
-  });
+  votes.forEach((v) => {
+    board.addObject({ x: v.x, y: v.y, c: WGo.B }) // 黒石を配置 (必要に応じ白なら WGo.W)
+    board.addObject({ x: v.x, y: v.y, type: 'LB', text: String(v.votes) }) // 石と同座標に票数ラベルを配置
+  })
 </script>
 ```
 
@@ -299,26 +299,26 @@ WGo.jsの作者自身がこうした拡張例を示していることからも�
 ```javascript
 // カスタム描画ハンドラの例
 var customMarker = {
-    // 描画処理を定義
-    draw: function(args, board) {
-        var x = board.getX(args.x);  // 交点のキャンバス座標を取得
-        var y = board.getY(args.y);
-        var ctx = board.getContext();
-        
-        // カスタム描画処理を実装
-        ctx.fillStyle = getColorByVotes(args.votes);  // 投票数に応じた色決定
-        ctx.beginPath();
-        ctx.arc(x, y, 15, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // テキストを描画
-        ctx.fillStyle = "white";
-        ctx.font = "12px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(args.text, x, y);
-    }
-};
+  // 描画処理を定義
+  draw: function (args, board) {
+    var x = board.getX(args.x) // 交点のキャンバス座標を取得
+    var y = board.getY(args.y)
+    var ctx = board.getContext()
+
+    // カスタム描画処理を実装
+    ctx.fillStyle = getColorByVotes(args.votes) // 投票数に応じた色決定
+    ctx.beginPath()
+    ctx.arc(x, y, 15, 0, Math.PI * 2)
+    ctx.fill()
+
+    // テキストを描画
+    ctx.fillStyle = 'white'
+    ctx.font = '12px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(args.text, x, y)
+  },
+}
 ```
 
 ### 7.3 投票数による色分け実装
@@ -326,35 +326,35 @@ var customMarker = {
 ```javascript
 // 投票数から色を決定する関数
 function getColorByVotes(votes) {
-    if (votes >= 10) return "#ff4444";      // 高票数は赤
-    if (votes >= 5) return "#ffaa44";       // 中票数は橙
-    return "#44aa44";                       // 低票数は緑
+  if (votes >= 10) return '#ff4444' // 高票数は赤
+  if (votes >= 5) return '#ffaa44' // 中票数は橙
+  return '#44aa44' // 低票数は緑
 }
 
 // 色付き投票数マーカーの実装
 var voteMarker = {
-    draw: function(args, board) {
-        var x = board.getX(args.x);
-        var y = board.getY(args.y);
-        var ctx = board.getContext();
-        
-        // 背景円の描画
-        ctx.fillStyle = getColorByVotes(args.votes);
-        ctx.beginPath();
-        ctx.arc(x, y, 15, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // 投票数テキストの描画
-        ctx.fillStyle = "white";
-        ctx.font = "bold 12px sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(args.votes, x, y);
-    }
-};
+  draw: function (args, board) {
+    var x = board.getX(args.x)
+    var y = board.getY(args.y)
+    var ctx = board.getContext()
+
+    // 背景円の描画
+    ctx.fillStyle = getColorByVotes(args.votes)
+    ctx.beginPath()
+    ctx.arc(x, y, 15, 0, Math.PI * 2)
+    ctx.fill()
+
+    // 投票数テキストの描画
+    ctx.fillStyle = 'white'
+    ctx.font = 'bold 12px sans-serif'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    ctx.fillText(args.votes, x, y)
+  },
+}
 
 // カスタムマーカーの使用
-board.addObject({ x: 3, y: 3, type: voteMarker, votes: 12 });
+board.addObject({ x: 3, y: 3, type: voteMarker, votes: 12 })
 ```
 
 ---
@@ -395,39 +395,39 @@ WGo.jsでは単一の交点に紐付かない描画（盤周りの座標など�
 // 1. 座標表示用のカスタム描画ハンドラを定義 (グリッド層に描画)
 var coordinates = {
   grid: {
-    draw: function(args, board) {
+    draw: function (args, board) {
       // テキスト描画のスタイル設定
-      this.fillStyle = "rgba(0,0,0,0.7)";    // 透明黒で文字描画
-      this.textBaseline = "middle";
-      this.textAlign = "center";
-      this.font = board.stoneRadius + "px " + (board.font || "");
-      
+      this.fillStyle = 'rgba(0,0,0,0.7)' // 透明黒で文字描画
+      this.textBaseline = 'middle'
+      this.textAlign = 'center'
+      this.font = board.stoneRadius + 'px ' + (board.font || '')
+
       // 盤外に文字を配置するための座標計算
-      var xLeft   = board.getX(board.size - 0.25),  // 右端より少し右のX座標
-          xRight  = board.getX(-0.75),             // 左端より少し左のX座標
-          yTop    = board.getY(-0.75),             // 上端より少し上のY座標
-          yBottom = board.getY(board.size - 0.25); // 下端より少し下のY座標
-      
+      var xLeft = board.getX(board.size - 0.25), // 右端より少し右のX座標
+        xRight = board.getX(-0.75), // 左端より少し左のX座標
+        yTop = board.getY(-0.75), // 上端より少し上のY座標
+        yBottom = board.getY(board.size - 0.25) // 下端より少し下のY座標
+
       // 全ての交点に対応する座標ラベルを描画
       for (var i = 0; i < board.size; i++) {
         // 横方向の文字(A～T)を決定（'I'を飛ばす）
-        var charCode = "A".charCodeAt(0) + i;
-        if (charCode >= "I".charCodeAt(0)) charCode++;             // 'I'の文字コードをスキップ
-        var letter = String.fromCharCode(charCode);
-        
+        var charCode = 'A'.charCodeAt(0) + i
+        if (charCode >= 'I'.charCodeAt(0)) charCode++ // 'I'の文字コードをスキップ
+        var letter = String.fromCharCode(charCode)
+
         // 縦座標（数字）ラベルを左端と右端に描画
-        var y = board.getY(i);
-        this.fillText(board.size - i, xLeft,  y);                  // 左側：19,18,...1
-        this.fillText(board.size - i, xRight, y);                  // 右側：19,18,...1
-        
+        var y = board.getY(i)
+        this.fillText(board.size - i, xLeft, y) // 左側：19,18,...1
+        this.fillText(board.size - i, xRight, y) // 右側：19,18,...1
+
         // 横座標（英字）ラベルを上端と下端に描画
-        var x = board.getX(i);
-        this.fillText(letter, x, yTop);                            // 上側：A,...T（I抜き）
-        this.fillText(letter, x, yBottom);                         // 下側：A,...T（I抜き）
+        var x = board.getX(i)
+        this.fillText(letter, x, yTop) // 上側：A,...T（I抜き）
+        this.fillText(letter, x, yBottom) // 下側：A,...T（I抜き）
       }
-    }
-  }
-};
+    },
+  },
+}
 ```
 
 ### 9.3 座標ラベルの描画ロジック
@@ -435,13 +435,16 @@ var coordinates = {
 上記のカスタムハンドラでは、盤のサイズ（`board.size`、通常19路）に応じてループを回し、各交点に対応する座標文字を計算・描画しています。
 
 #### 英字座標の計算
+
 - 文字コードを利用してAから順に取得
 - Iの文字に達したらコードを+1することでスキップ（[参考: wgo.waltheri.net](https://wgo.waltheri.net)）
 
 #### 数字座標の計算
+
 - `board.size - i`とすることで上辺から数えて19, 18, ...1の順になるよう計算（[参考: wgo.waltheri.net](https://wgo.waltheri.net)）
 
 #### 描画位置の指定
+
 - `board.getX()`および`board.getY()`を使用
 - 盤外に少し余裕を持たせた座標（例えば-0.75や`board.size - 0.25`といった相対座標）を指定
 - 文字が盤枠の外側に配置されるようにしています（[参考: wgo.waltheri.net](https://wgo.waltheri.net)）
@@ -452,7 +455,7 @@ var coordinates = {
 
 ```javascript
 // 2. カスタム座標オブジェクトをボードに追加
-board.addCustomObject(coordinates);
+board.addCustomObject(coordinates)
 ```
 
 これで座標ラベルの描画処理がボードに組み込まれます。しかしそのままでは、盤のキャンバス領域外に描画される文字が切れて見えなくなる可能性があります。
@@ -464,10 +467,10 @@ board.addCustomObject(coordinates);
 デフォルトは全て0ですが、負の値を指定すると盤を超えて余白を増やすことが可能です（[参考: wgo.waltheri.net](https://wgo.waltheri.net)）。
 
 ```javascript
-var board = new WGo.Board(document.getElementById("board"), {
+var board = new WGo.Board(document.getElementById('board'), {
   width: 600,
-  section: { top: -0.5, bottom: -0.5, left: -0.5, right: -0.5 }  // 3. 座標表示のため余白拡大
-});
+  section: { top: -0.5, bottom: -0.5, left: -0.5, right: -0.5 }, // 3. 座標表示のため余白拡大
+})
 ```
 
 上記のように`section`プロパティを指定することで、盤面の上下左右にそれぞれ半マス分（0.5）の余白が追加され、ラベルがキャンバス内に収まって表示されます（[参考: wgo.waltheri.net](https://wgo.waltheri.net)）。
@@ -477,55 +480,55 @@ var board = new WGo.Board(document.getElementById("board"), {
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>WGo.js 座標表示サンプル</title>
     <script src="wgo/wgo.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="board"></div>
-    
+
     <script>
-        // 座標表示用のカスタム描画ハンドラ
-        var coordinates = {
-          grid: {
-            draw: function(args, board) {
-              this.fillStyle = "rgba(0,0,0,0.7)";
-              this.textBaseline = "middle";
-              this.textAlign = "center";
-              this.font = board.stoneRadius + "px " + (board.font || "");
-              
-              var xLeft   = board.getX(board.size - 0.25),
-                  xRight  = board.getX(-0.75),
-                  yTop    = board.getY(-0.75),
-                  yBottom = board.getY(board.size - 0.25);
-              
-              for (var i = 0; i < board.size; i++) {
-                var charCode = "A".charCodeAt(0) + i;
-                if (charCode >= "I".charCodeAt(0)) charCode++;
-                var letter = String.fromCharCode(charCode);
-                
-                var y = board.getY(i);
-                this.fillText(board.size - i, xLeft,  y);
-                this.fillText(board.size - i, xRight, y);
-                
-                var x = board.getX(i);
-                this.fillText(letter, x, yTop);
-                this.fillText(letter, x, yBottom);
-              }
+      // 座標表示用のカスタム描画ハンドラ
+      var coordinates = {
+        grid: {
+          draw: function (args, board) {
+            this.fillStyle = 'rgba(0,0,0,0.7)'
+            this.textBaseline = 'middle'
+            this.textAlign = 'center'
+            this.font = board.stoneRadius + 'px ' + (board.font || '')
+
+            var xLeft = board.getX(board.size - 0.25),
+              xRight = board.getX(-0.75),
+              yTop = board.getY(-0.75),
+              yBottom = board.getY(board.size - 0.25)
+
+            for (var i = 0; i < board.size; i++) {
+              var charCode = 'A'.charCodeAt(0) + i
+              if (charCode >= 'I'.charCodeAt(0)) charCode++
+              var letter = String.fromCharCode(charCode)
+
+              var y = board.getY(i)
+              this.fillText(board.size - i, xLeft, y)
+              this.fillText(board.size - i, xRight, y)
+
+              var x = board.getX(i)
+              this.fillText(letter, x, yTop)
+              this.fillText(letter, x, yBottom)
             }
-          }
-        };
-        
-        // ボードの初期化（座標表示用の余白設定込み）
-        var board = new WGo.Board(document.getElementById("board"), {
-            width: 600,
-            section: { top: -0.5, bottom: -0.5, left: -0.5, right: -0.5 }
-        });
-        
-        // 座標表示ハンドラを追加
-        board.addCustomObject(coordinates);
+          },
+        },
+      }
+
+      // ボードの初期化（座標表示用の余白設定込み）
+      var board = new WGo.Board(document.getElementById('board'), {
+        width: 600,
+        section: { top: -0.5, bottom: -0.5, left: -0.5, right: -0.5 },
+      })
+
+      // 座標表示ハンドラを追加
+      board.addCustomObject(coordinates)
     </script>
-</body>
+  </body>
 </html>
 ```
 
@@ -552,72 +555,72 @@ WGo.jsのボード描画APIは、v1からv2への移行でも大きな変更が�
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>WGo.js 投票数表示システム</title>
     <script src="wgo/wgo.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="board"></div>
-    
+
     <script>
-        // 1. 盤面の初期化
-        var board = new WGo.Board(document.getElementById("board"), { 
-            width: 600 
-        });
-        
-        // 2. 投票数から色を決定
-        function getColorByVotes(votes) {
-            if (votes >= 15) return "#d32f2f";
-            if (votes >= 10) return "#f57c00";
-            if (votes >= 5) return "#fbc02d";
-            return "#388e3c";
-        }
-        
-        // 3. カスタム投票マーカーの定義
-        var voteMarker = {
-            draw: function(args, board) {
-                var x = board.getX(args.x);
-                var y = board.getY(args.y);
-                var ctx = board.getContext();
-                
-                // 背景円
-                ctx.fillStyle = getColorByVotes(args.votes);
-                ctx.beginPath();
-                ctx.arc(x, y, 18, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // 枠線
-                ctx.strokeStyle = "#333";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                
-                // テキスト
-                ctx.fillStyle = "white";
-                ctx.font = "bold 14px sans-serif";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                ctx.fillText(args.votes, x, y);
-            }
-        };
-        
-        // 4. 投票データの表示
-        var voteData = [
-            { x: 3, y: 4, votes: 18 },
-            { x: 10, y: 10, votes: 12 },
-            { x: 15, y: 16, votes: 6 },
-            { x: 5, y: 5, votes: 3 }
-        ];
-        
-        voteData.forEach(vote => {
-            board.addObject({ 
-                x: vote.x, 
-                y: vote.y, 
-                type: voteMarker, 
-                votes: vote.votes 
-            });
-        });
+      // 1. 盤面の初期化
+      var board = new WGo.Board(document.getElementById('board'), {
+        width: 600,
+      })
+
+      // 2. 投票数から色を決定
+      function getColorByVotes(votes) {
+        if (votes >= 15) return '#d32f2f'
+        if (votes >= 10) return '#f57c00'
+        if (votes >= 5) return '#fbc02d'
+        return '#388e3c'
+      }
+
+      // 3. カスタム投票マーカーの定義
+      var voteMarker = {
+        draw: function (args, board) {
+          var x = board.getX(args.x)
+          var y = board.getY(args.y)
+          var ctx = board.getContext()
+
+          // 背景円
+          ctx.fillStyle = getColorByVotes(args.votes)
+          ctx.beginPath()
+          ctx.arc(x, y, 18, 0, Math.PI * 2)
+          ctx.fill()
+
+          // 枠線
+          ctx.strokeStyle = '#333'
+          ctx.lineWidth = 2
+          ctx.stroke()
+
+          // テキスト
+          ctx.fillStyle = 'white'
+          ctx.font = 'bold 14px sans-serif'
+          ctx.textAlign = 'center'
+          ctx.textBaseline = 'middle'
+          ctx.fillText(args.votes, x, y)
+        },
+      }
+
+      // 4. 投票データの表示
+      var voteData = [
+        { x: 3, y: 4, votes: 18 },
+        { x: 10, y: 10, votes: 12 },
+        { x: 15, y: 16, votes: 6 },
+        { x: 5, y: 5, votes: 3 },
+      ]
+
+      voteData.forEach((vote) => {
+        board.addObject({
+          x: vote.x,
+          y: vote.y,
+          type: voteMarker,
+          votes: vote.votes,
+        })
+      })
     </script>
-</body>
+  </body>
 </html>
 ```
 
@@ -625,29 +628,29 @@ WGo.jsのボード描画APIは、v1からv2への移行でも大きな変更が�
 
 ```javascript
 // SGFプレイヤーと投票数表示の組み合わせ
-var player = new WGo.BasicPlayer(document.getElementById("player"), {
-    sgfFile: "game.sgf"
-});
+var player = new WGo.BasicPlayer(document.getElementById('player'), {
+  sgfFile: 'game.sgf',
+})
 
 // 現在の盤面に投票数を表示
 function displayVotes(voteData) {
-    voteData.forEach(vote => {
-        player.board.addObject({ 
-            x: vote.x, 
-            y: vote.y, 
-            type: voteMarker, 
-            votes: vote.votes 
-        });
-    });
+  voteData.forEach((vote) => {
+    player.board.addObject({
+      x: vote.x,
+      y: vote.y,
+      type: voteMarker,
+      votes: vote.votes,
+    })
+  })
 }
 
 // 投票数データの適用
 var currentVotes = [
-    { x: 3, y: 4, votes: 15 },
-    { x: 10, y: 10, votes: 8 }
-];
+  { x: 3, y: 4, votes: 15 },
+  { x: 10, y: 10, votes: 8 },
+]
 
-displayVotes(currentVotes);
+displayVotes(currentVotes)
 ```
 
 ---

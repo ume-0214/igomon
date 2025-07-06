@@ -1,10 +1,10 @@
 // client/src/App.tsx
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { Home } from './pages/Home';
-import { Questionnaire } from './pages/Questionnaire';
-import { Results } from './pages/Results';
-import './App.css';
+import React from 'react'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { Home } from './pages/Home'
+import { Questionnaire } from './pages/Questionnaire'
+import { Results } from './pages/Results'
+import './App.css'
 
 function App() {
   return (
@@ -17,7 +17,7 @@ function App() {
         </Routes>
       </div>
     </Router>
-  );
+  )
 }
 
-export default App;
+export default App
