@@ -1,6 +1,6 @@
 // client/src/pages/Questionnaire.tsx
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import GoBoard from '../components/GoBoard';
 import { AnswerForm } from '../components/AnswerForm';
 import { getProblem, submitAnswer, hasUserAnswered } from '../utils/api';
@@ -128,6 +128,14 @@ export function Questionnaire() {
               onSubmit={handleSubmit}
             />
             {isSubmitting && <p className="submitting">送信中...</p>}
+            <div className="back-to-top">
+              <Link to="/">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11 12L7 8L11 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>トップへ戻る</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
