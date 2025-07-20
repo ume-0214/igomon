@@ -16,6 +16,8 @@
 
 ページには、SGFファイルから読み込んだ問題の盤面が表示される [user request]。表示する手数は、description.txtのmovesパラメータで指定された手数まで（指定がない場合は最終手まで）とする。
 
+盤面上では、最終着手が視覚的に識別できるよう、最終手にマークが表示される。このマークは石の色に応じて自動的に調整される（黒石には白い円、白石には黒い円）。
+
 ユーザーは盤面をクリックすることで着手点を選択でき、選択した座標はフォームに自動入力される。座標はUI上では標準囲碁記法（A1〜T19）で表示され、データベースにはSGF形式（aa, ab, ac...）で保存される。
 
 ユーザーは着手を選択し、「着手の理由」「名前」「段位」を入力して回答を送信する。
@@ -1642,6 +1644,7 @@ interface GoBoardProps {
   showClickable?: boolean;
   resultsData?: Record<string, { votes: number; answers: any[] }>;
   maxMoves?: number; // movesパラメータ対応
+  derivedTurn: "black" | "white"; // 現在の手番
 }
 
 declare global {
@@ -1655,7 +1658,8 @@ export default function GoBoard({
   onCoordinateSelect,
   showClickable = false,
   resultsData,
-  maxMoves
+  maxMoves,
+  derivedTurn
 }: GoBoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const [board, setBoard] = useState<any>(null);
@@ -1700,30 +1704,95 @@ export default function GoBoard({
 
         setBoard(newBoard);
 
+        // ゲームとlastMoveを外側のスコープで宣言
+        let game: any;
+        let lastMove: { x: number; y: number; color: number } | null = null;
+
         if (sgfContent) {
           // SGF処理（WGo.Gameクラス使用）
-          const game = new window.WGo.Game();
-          loadSgfToGame(game, sgfContent, maxMoves);
+          game = new window.WGo.Game();
+          lastMove = loadSgfToGame(game, sgfContent, maxMoves);
 
-          // 現在のポジションを盤面に反映
+          // 現在のポジションを盤面に反映（最終手マーク付き）
           const position = game.getPosition();
-          updateBoardPosition(newBoard, position);
+          updateBoardPosition(newBoard, position, lastMove);
 
           // アンケート回答ページでのクリック処理（公式addEventListener）
           if (showClickable && onCoordinateSelect) {
+            // クリックマーカー保存用変数
+            let lastClickMarker: any = null
+
+            // 現在の手番を取得（黒番: 1, 白番: -1）
+            const currentTurn = derivedTurn === "black" ? window.WGo.B : window.WGo.W
+
+            // カスタム着手点マーカーハンドラーを定義
+            const clickMarkerHandler = {
+              stone: {
+                draw: function (args: any, board: any) {
+                  const ctx = board.stone.getContext(args.x, args.y)
+                  const xr = board.getX(args.x)
+                  const yr = board.getY(args.y)
+                  const sr = board.stoneRadius
+
+                  // 手番に応じた色を設定
+                  const markerColor = currentTurn === 1 ? '#000000' : '#FFFFFF' // 黒番なら黒、白番なら白
+                  const markerAlpha =
+                    currentTurn === 1 ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.8)'
+
+                  // 外側の円を描画
+                  ctx.beginPath()
+                  ctx.arc(xr, yr, sr * 0.9, 0, 2 * Math.PI, true)
+                  ctx.lineWidth = 3
+                  ctx.strokeStyle = markerColor
+                  ctx.stroke()
+
+                  // 内側の塗りつぶし円（半透明）
+                  ctx.beginPath()
+                  ctx.arc(xr, yr, sr * 1.0, 0, 2 * Math.PI, true)
+                  ctx.fillStyle = markerAlpha
+                  ctx.fill()
+
+                  // 白番の場合は黒い輪郭を追加
+                  if (currentTurn === -1) {
+                    ctx.beginPath()
+                    ctx.arc(xr, yr, sr * 1.0, 0, 2 * Math.PI, true)
+                    ctx.lineWidth = 2
+                    ctx.strokeStyle = '#000000'
+                    ctx.stroke()
+                  }
+
+                  // 中心の点
+                  ctx.beginPath()
+                  ctx.arc(xr, yr, sr * 0.2, 0, 2 * Math.PI, true)
+                  ctx.fillStyle = markerColor
+                  ctx.fill()
+                },
+              },
+            }
+
             newBoard.addEventListener("click", (x: number, y: number) => {
+              // 着手禁止点、盤外の点などは無視
+              if (!game.isValid(x, y, currentTurn)) return
+
               // 公式座標システム（相対座標）
               const coordinate = wgoToSgfCoords(x, y);
               onCoordinateSelect(coordinate);
 
-              // 視覚的フィードバック（公式addObject）
-              newBoard.removeObjectsAt(x, y); // 既存マーカー削除
-              newBoard.addObject({
+              // 視覚的フィードバック
+              // すべてのオブジェクトを削除してから石を再配置
+              newBoard.removeAllObjects()
+
+              // 既存の石を再配置（最終手マークも含む）
+              const position = game.getPosition()
+              updateBoardPosition(newBoard, position, lastMove)
+
+              // 新しいマーカーを追加（カスタムハンドラー使用）
+              lastClickMarker = {
                 x: x,
                 y: y,
-                type: "CR",  // 公式定義済みマーカー（円）
-                c: "#ff0000" // 赤色
-              });
+                type: clickMarkerHandler,
+              }
+              newBoard.addObject(lastClickMarker)
             });
           }
 
@@ -1750,6 +1819,8 @@ export default function GoBoard({
 
   // SGFをWGo.Gameに読み込み（公式Game API使用）
   const loadSgfToGame = (game: any, sgfContent: string, maxMoves?: number) => {
+    let lastMove: { x: number; y: number; color: number } | null = null;
+
     try {
       // 簡易SGFパーサー（公式の詳細パーサーがあれば使用推奨）
       const moves = parseSgfMoves(sgfContent);
@@ -1763,15 +1834,22 @@ export default function GoBoard({
           if (Array.isArray(result)) {
             console.log(`Move ${index + 1}: captured ${result.length} stones`);
           }
+
+          // 最終手として記録（maxMovesの範囲内の最後の手）
+          if (maxMoves === undefined || index < maxMoves) {
+            lastMove = { x: move.x, y: move.y, color: move.color };
+          }
         }
       });
     } catch (error) {
       console.error('Failed to load SGF:', error);
     }
+
+    return lastMove;
   };
 
   // ポジションを盤面に反映（公式Position API使用）
-  const updateBoardPosition = (boardInstance: any, position: any) => {
+  const updateBoardPosition = (boardInstance: any, position: any, lastMove?: { x: number; y: number; color: number }) => {
     boardInstance.removeAllObjects(); // 既存オブジェクト削除
 
     for (let x = 0; x < position.size; x++) {
@@ -1786,6 +1864,38 @@ export default function GoBoard({
           });
         }
       }
+    }
+
+    // 最終手にマークを表示
+    if (lastMove) {
+      // 最終手マーカーハンドラー（石の色に応じて円の色を変える）
+      const lastMoveMarkerHandler = {
+        stone: {
+          draw: function(args: any, board: any) {
+            const ctx = board.stone.getContext(args.x, args.y);
+            const xr = board.getX(args.x);
+            const yr = board.getY(args.y);
+            const sr = board.stoneRadius;
+
+            // 石の色に応じてマーカーの色を決定（黒石には白い円、白石には黒い円）
+            const markerColor = args.c === window.WGo.B ? '#FFFFFF' : '#000000';
+
+            // 円を描画
+            ctx.beginPath();
+            ctx.arc(xr, yr, sr * 0.3, 0, 2 * Math.PI, true);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = markerColor;
+            ctx.stroke();
+          }
+        }
+      };
+
+      boardInstance.addObject({
+        x: lastMove.x,
+        y: lastMove.y,
+        c: lastMove.color,
+        type: lastMoveMarkerHandler
+      });
     }
   };
 
@@ -1929,6 +2039,7 @@ export default function GoBoard({
 <GoBoard
   sgfContent={problemData.sgfContent}
   maxMoves={problemData.moves} // movesパラメータ対応
+  derivedTurn={problemData.turn} // 手番情報を渡す
   onCoordinateSelect={(coordinate) => {
     setSelectedCoordinate(coordinate);
   }}
@@ -1939,6 +2050,7 @@ export default function GoBoard({
 <GoBoard
   sgfContent={problemData.sgfContent}
   maxMoves={problemData.moves}
+  derivedTurn={problemData.turn} // 手番情報を渡す
   resultsData={resultsData}
   showClickable={false}
 />
@@ -1995,3 +2107,329 @@ app.get('/wgo/wgo.min.js', (req, res) => {
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/intro.html)
 - [Socket.IO Documentation](https://socket.io/docs/v4/)
 - [WGo.js Documentation](https://wgo.waltheri.net/)
+
+## 11. 段位フィルター機能
+
+### 11.1. 概要
+
+結果表示ページにおいて、特定の段位範囲の回答のみを表示できるフィルター機能を実装。これにより、自分と同じレベルの棋力層の回答を確認したり、高段者の着手理由を学習したりすることが可能になる。
+
+### 11.2. 実装履歴
+
+#### 初期実装（コミット：89352c8, 3ef3f59, 37a5318, 6f135b4, 3d06dda）
+
+**1. フロントエンドでのフィルタリング方式採用**
+
+- APIを実行せずにクライアントサイドでフィルタリング処理を実装
+- 全回答データを一度取得し、スライダー操作時にリアルタイムでフィルタリング
+- パフォーマンスの向上とサーバー負荷の軽減を実現
+
+**2. スライダーコンポーネントの実装**
+
+- 20級からプロまでの段位範囲を選択可能
+- リアルタイムで結果が更新される仕様に変更（37a5318）
+- スライダーの優先順位制御とz-index管理（6f135b4）
+- 両端が同じ値の場合の特殊処理（両方が九段または両方が20級）
+
+**3. 結果表示の連携**
+
+- フィルタリングされた回答のみが碁盤上に表示
+- 回答詳細表示もフィルタリング後のデータを使用（3d06dda）
+- 着手点が消えない問題の修正（3ef3f59）
+
+### 11.3. 技術仕様
+
+#### RangeSliderコンポーネント
+
+```typescript
+interface RangeSliderProps {
+  minValue: number
+  maxValue: number
+  onRangeChange: (min: number, max: number) => void
+}
+```
+
+主な機能：
+
+- 段位配列（RANKS）を使用したインデックス管理
+- リアルタイム更新（useEffectフック不要）
+- スライダー優先順位制御（z-index管理）
+
+#### フィルタリング処理
+
+```typescript
+const filterResults = (
+  data: Record<string, { votes: number; answers: any[] }>,
+  min: number,
+  max: number,
+) => {
+  const filteredResults: Record<string, { votes: number; answers: any[] }> = {}
+
+  Object.entries(data).forEach(([key, value]) => {
+    const filteredAnswers = value.answers.filter((answer) => {
+      const rankIndex = RANKS.indexOf(answer.playerRank)
+      return rankIndex >= min && rankIndex <= max
+    })
+
+    if (filteredAnswers.length > 0) {
+      filteredResults[key] = {
+        votes: filteredAnswers.length,
+        answers: filteredAnswers,
+      }
+    }
+  })
+
+  setResults(filteredResults)
+}
+```
+
+### 11.4. 着手禁止点の選択防止機能（コミット：f7c14b8）
+
+#### 概要
+
+アンケート回答ページにおいて、囲碁のルール上着手できない点（既に石がある位置、コウ、自殺手など）をクリックしても選択されないようにする機能を実装。
+
+#### 実装内容
+
+**WGo.jsのゲームロジック活用：**
+```typescript
+newBoard.addEventListener("click", (x: number, y: number) => {
+  // 着手禁止点、盤外の点などは無視
+  if (!game.isValid(x, y, currentTurn)) return
+  
+  // 有効な着手点のみ処理を続行
+  const coordinate = wgoToSgfCoords(x, y);
+  onCoordinateSelect(coordinate);
+  // ...
+});
+```
+
+**主な機能：**
+- WGo.Gameクラスの`isValid()`メソッドを使用して着手可能性を判定
+- 既に石がある位置へのクリックを無視
+- コウの規則に違反する着手を防止
+- 自殺手（着手後に自分の石が取られる手）を防止
+- 盤外クリックの無視
+
+これにより、ユーザーは有効な着手点のみを選択できるようになり、誤った回答の送信を防ぐことができる。
+
+### 11.5. プロ段位の追加（コミット：eda8383）
+
+#### 概要
+
+段位選択肢およびフィルター機能に「プロ」を追加。これにより、プロ棋士の回答も記録・フィルタリングできるようになった。
+
+#### 変更内容
+
+**1. 段位配列の更新**
+```typescript
+const RANKS = [
+  '20級', '19級', '18級', '17級', '16級', '15級', '14級', '13級', '12級', '11級',
+  '10級', '9級', '8級', '7級', '6級', '5級', '4級', '3級', '2級', '1級',
+  '初段', '二段', '三段', '四段', '五段', '六段', '七段', '八段', '九段', 'プロ'
+]
+```
+
+**2. 段位フィルターの対応**
+- スライダーの範囲を「20級からプロまで」に拡張
+- プロの回答のみを表示するフィルタリングが可能に
+- 段位選択フォームでプロを選択可能に
+
+**3. 影響範囲**
+- アンケート回答フォームの段位選択
+- 結果表示ページの段位フィルター
+- 回答詳細表示での段位表示
+
+これにより、プロ棋士とアマチュア棋士の着手理由を比較することが可能になり、学習効果の向上が期待される。
+
+### 11.6. 認証ロジックの実装（コミット：f3b839f）
+
+#### 概要
+
+なりすまし対策として、Bearer Token認証方式を採用した認証システムを実装。ユーザーは明示的な登録作業なしで、初回アクセス時に自動的に認証される。
+
+#### 実装内容
+
+**1. 認証方式**
+
+- **Bearer Token認証**: HTTPヘッダーに`Authorization: Bearer {token}`形式でトークンを送信
+- **トークン仕様**: 32バイトのランダムな16進数文字列（64文字）
+- **保存場所**: ローカルストレージの`igomon_auth_token`キー
+
+**2. クライアントサイドの実装**
+
+```typescript
+// client/src/utils/auth.ts
+export async function ensureAuthenticated(): Promise<boolean> {
+  if (hasAuthToken()) {
+    return true
+  }
+  
+  try {
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      setAuthToken(data.authToken)
+      return true
+    }
+  } catch (error) {
+    console.error('Authentication failed:', error)
+  }
+  
+  return false
+}
+```
+
+**3. サーバーサイドの実装**
+
+認証ミドルウェア:
+```typescript
+// server/middleware/auth.ts
+export async function authenticateToken(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) {
+  const authHeader = req.headers['authorization']
+  const token = authHeader && authHeader.split(' ')[1]
+  
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' })
+  }
+  
+  const user = await getUserByAuthToken(token)
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid token' })
+  }
+  
+  req.user = user
+  next()
+}
+```
+
+**4. データベース変更**
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  uuid      String   @unique
+  authToken String   @unique @map("auth_token")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  answers   Answer[]
+}
+```
+
+**5. セキュリティ強化**
+
+- userUuidの直接送信を廃止し、認証トークンから取得
+- 回答削除は自分の投稿のみ可能（`canDelete`フラグで制御）
+- 結果取得APIでuserUuidを隠蔽してプライバシー保護
+- 401エラー時の自動再認証機能
+
+**6. 影響を受けるAPI**
+
+- `POST /api/auth/register`: 新規ユーザー登録（新規追加）
+- `POST /api/answers`: 回答投稿（認証必須）
+- `DELETE /api/answers/:answerId`: 回答削除（認証必須）
+- `GET /api/problems/:problemId/answered`: 回答済み確認（認証必須）
+- `GET /api/results/:problemId`: 結果取得（認証任意）
+
+この実装により、なりすましを防ぎながら、ユーザーは認証を意識せずにシームレスに利用できる。
+
+### 11.7. 問題の期限機能（コミット：52a50d8）
+
+#### 概要
+
+問題に期限を設定できる機能を実装。期限が過ぎた問題は誰でも結果を閲覧でき、期限前は回答者のみが結果を閲覧できる仕組みを提供。
+
+#### 実装内容
+
+**1. データベース変更**
+
+Problemモデルに期限フィールドを追加：
+```prisma
+model Problem {
+  // ... 既存フィールド
+  deadline    DateTime? // 期限（オプショナル）
+  // ...
+}
+```
+
+**2. description.txtフォーマットの拡張**
+
+期限パラメータの追加（任意）：
+```plaintext
+id: 1515
+turn: black
+created: 2025-06-27
+deadline: 2025-07-01T23:59:59Z
+moves: 30
+description: 着手とその理由を回答してください。
+```
+
+**3. クライアントサイドの期限チェック**
+
+アンケート回答ページ（Questionnaire.tsx）：
+```typescript
+// 期限チェック
+if (problemData.deadline) {
+  const now = new Date()
+  const deadlineDate = new Date(problemData.deadline)
+  
+  if (now >= deadlineDate) {
+    // 期限切れの場合、結果ページへ自動遷移
+    navigate(`/results/${problemId}`, { replace: true })
+    return
+  }
+}
+```
+
+結果表示ページ（Results.tsx）：
+```typescript
+// 期限切れチェック
+const isExpired = problemData.deadline 
+  ? new Date() >= new Date(problemData.deadline) 
+  : false
+
+// 期限切れまたは回答済みの場合のみ結果を表示
+if (!isExpired && !hasAnswered) {
+  // 未回答の場合は結果を表示しない
+  return <UnauthorizedView />
+}
+```
+
+**4. 動作仕様**
+
+- **期限前**：
+  - 回答ページ：正常にアクセス可能
+  - 結果ページ：回答済みユーザーのみ閲覧可能
+  
+- **期限後**：
+  - 回答ページ：自動的に結果ページへリダイレクト
+  - 結果ページ：誰でも閲覧可能（回答の有無に関わらず）
+
+**5. 問題作成時の対応**
+
+- 問題作成APIで`deadline`パラメータを受け付け
+- description.txtファイルに期限情報を保存
+- データベースに期限情報を登録
+
+この機能により、時間制限のあるアンケートや、特定期間後に結果を公開したい問題を作成できるようになった。
+
+### 11.8. 今後の改善案
+
+- [ ] 段位フィルターの設定をローカルストレージに保存
+- [ ] プリセットフィルター（初級者向け、中級者向け、上級者向け、プロのみ）の追加
+- [ ] フィルター適用中の視覚的表示の改善
+- [ ] 段位分布グラフの表示機能
+- [ ] プロの回答に特別なマーク表示
+- [ ] 認証トークンの有効期限管理
+- [ ] リフレッシュトークンの実装
+- [ ] 期限切れ問題の視覚的な表示（アイコンやバッジ）
+- [ ] 期限までの残り時間表示機能
